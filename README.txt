@@ -146,3 +146,12 @@ Let's check the reponse::
    u'result': {u'data': [u'sancho', u'sancho'], u'success': True},
    u'tid': u'2',
    u'type': u'rpc'}
+   
+
+TODO
+====
+
+More tests for ExtRemotingProvider
+Write tests for ExtPollingProvider
+Handle files uploads
+
