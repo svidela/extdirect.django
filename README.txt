@@ -31,7 +31,7 @@ be an empty config object ::
   
 So, all you have to do to register the Ext.DirectProvider in your web application is::
 
-  <script src="/remoting/script.js/"></script>
+  <script src="/remoting/provider.js/"></script>
   
 We will use the `_config` property from now on, (the config object passed to addProvider function)::
   
