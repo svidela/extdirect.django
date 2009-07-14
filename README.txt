@@ -11,7 +11,11 @@ included in `ExtJS 3.0`_ following the `Ext.Direct specification`_
 
 Take a look to tests.py and test_urls.py to see the needed setup.
 
-First, let's create a test browser::
+We need to set the __name__ variable to access to function.__module__ later
+
+  >>> __name__ = 'extdirect.django.doctest'
+
+Let's create a test browser::
 
   >>> from django.test.client import Client
   >>> client = Client()
@@ -47,7 +51,7 @@ We will use the `_config` property from now on, (the config object passed to add
    
 Ok, now we are going to register a new function on our provider instance (tests.remote_provider)
 
-  >>> @remoting('user', tests.remote_provider)
+  >>> @remoting(tests.remote_provider, action='user')
   ... def list(request):
   ...   pass
   ...
@@ -63,10 +67,12 @@ By default, `formHandler` will be set to false, `len` to 0 and `name` to the fun
 Note that ExtDirect has `actions` (controllers) and `methods`. But here, we have just functions.
 So, we use::
 
-  @remoting('user', tests.remote_provider)
+  @remoting(tests.remote_provider, action='user')
   def list(request):
   
 to say, "add the `list` function to the `user` action".
+But this is optional, if we don't set the `action` explicity, the default value it's the function __module__
+attribute (replacing '.' with '_')
 
 It's importat to note, that the signature that you pass to `@remoting` it's not relevant in the server-side.
 The functions that we expose to Ext.Direct should receive just the `request` instace like any other django view.
@@ -75,26 +81,32 @@ When the function it's a form handler (form_handler=True), all the parameters wi
 
 Let's register a few more functions
 
-  >>> @remoting('user', tests.remote_provider, form_handler=True)
+  >>> @remoting(tests.remote_provider, action='user', form_handler=True)
   ... def update(request):  
   ...   return dict(success=True, data=[request.POST['username'], request.POST['password']])
   ...
-  >>> @remoting('posts', tests.remote_provider, len=1)
+  >>> @remoting(tests.remote_provider, action='posts', len=1)
   ... def all(request):
   ...   #just return the recieved data
   ...   return dict(success=True, data=request.extdirect_post_data)
   ...
+  >>> @remoting(tests.remote_provider)
+  ... def module_action(request):  
+  ...   return dict(success=True)
   
 Let's take a look to the config object for our provider::
   
-  >>> pprint(tests.remote_provider._config)
-  {'actions': {'posts': [{'formHandler': False, 'len': 1, 'name': 'all'}],
+  >>> pprint(tests.remote_provider._config) #doctest: +NORMALIZE_WHITESPACE
+  {'actions': {'extdirect_django_doctest': [{'formHandler': False,
+                                             'len': 0,
+                                             'name': 'module_action'}],
+               'posts': [{'formHandler': False, 'len': 1, 'name': 'all'}],
                'user': [{'formHandler': False, 'len': 0, 'name': 'list'},
                         {'formHandler': True, 'len': 0, 'name': 'update'}]},
    'namespace': 'django',
    'type': 'remoting',
    'url': '/remoting/router/'}
-   
+
 It's time to make an ExtDirect call. In our javascript we will write just::
 
   django.posts.all({tag: 'extjs'})
@@ -153,5 +165,6 @@ TODO
 
 More tests for ExtRemotingProvider
 Write tests for ExtPollingProvider
-Handle files uploads
+Handle files uploads in form POST
+and... more tests
 

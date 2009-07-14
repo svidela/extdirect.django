@@ -102,9 +102,12 @@ class ExtRemotingProvider(ExtDirectProvider):
                 
         return config    
 
-    def register(self, action, method, name=None, len=0, form_handler=False, \
+    def register(self, method, action=None, name=None, len=0, form_handler=False, \
                  login_required=False, permission=None):
         
+        if not action:
+            action = method.__module__.replace('.', '_')
+            
         if not self.actions.has_key(action):
             #first time
             self.actions[action] = {}
@@ -143,16 +146,14 @@ class ExtRemotingProvider(ExtDirectProvider):
         #Checks for login or permissions required
         login_required = self.actions[action][method]['login_required']
         if(login_required):            
-            if not request.user.is_authenticated():
-                response['type'] = 'exception'
-                response['result'] = dict(errorMessage='You must be authenticated to run this method.')
+            if not request.user.is_authenticated():                
+                response['result'] = dict(success=False, message='You must be authenticated to run this method.')
                 return response
             
         permission = self.actions[action][method]['permission']
         if(permission):            
-            if not request.user.has_perm(permission):
-                response['type'] = 'exception'
-                response['result'] = dict(errorMessage='You need `%s` permission to run this method' % permission)
+            if not request.user.has_perm(permission):                
+                response['result'] = dict(success=False, messsage='You need `%s` permission to run this method' % permission)
                 return response
                 
         if data:
@@ -172,8 +173,13 @@ class ExtRemotingProvider(ExtDirectProvider):
         try:
             response['result'] = func(request)
         except Exception, e:
+            #FIXME: We must check settings.DEBUG to decide
+            #if we send the exception to Ext or we just raise it again.
             response['type'] = 'exception'
-            response['result'] = dict(errorMessage=str(e))
+            response['message'] = str(e)
+            #FIXME: We should get more info about the exception using the `traceback` module
+            #from the python standar library.
+            #response['where'] = 
         
         return response
         
@@ -241,14 +247,16 @@ class ExtPollingProvider(ExtDirectProvider):
 
         if(self.login_required):            
             if not request.user.is_authenticated():
-                response['type'] = 'exception'
-                response['result'] = dict(errorMessage='You must be authenticated to run this method.')
+                response['type'] = 'event'
+                response['data'] = 'You must be authenticated to run this method.'
+                response['name'] = self.event
                 return HttpResponse(simplejson.dumps(response, cls=DjangoJSONEncoder), mimetype='application/json')
                 
         if(self.permission):            
             if not request.user.has_perm(self.permission):
-                response['type'] = 'exception'
-                response['result'] = dict(errorMessage='You need `%s` permission to run this method' % self.permission)
+                response['type'] = 'result'
+                response['data'] = 'You need `%s` permission to run this method' % self.permission
+                response['name'] = self.event
                 return HttpResponse(simplejson.dumps(response, cls=DjangoJSONEncoder), mimetype='application/json')
         
         try:
@@ -260,7 +268,8 @@ class ExtPollingProvider(ExtDirectProvider):
                 raise RuntimeError("The server provider didn't register a function to run yet")
                 
         except Exception, e:
-            response['type'] = 'exception',
-            response['result'] = dict(errorMessage=str(e))
+            #FIXME: See the except comments in ExtRemotingProvider class
+            response['type'] = 'exception'
+            response['message'] = str(e)
         
         return HttpResponse(simplejson.dumps(response, cls=DjangoJSONEncoder), mimetype='application/json')
