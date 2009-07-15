@@ -136,7 +136,7 @@ class ExtRemotingProvider(ExtDirectProvider):
         func = self.actions[action][method]['func']        
         
         data = None
-        if not extdirect_req['isForm']:
+        if not extdirect_req.get('isForm'):
             data = extdirect_req.pop('data')
         
         #the response object will be the same recieved but without `data`.
@@ -197,8 +197,7 @@ class ExtRemotingProvider(ExtDirectProvider):
                 isForm = True
             )
         elif request.raw_post_data:
-            extdirect_request = simplejson.loads(request.raw_post_data)
-            extdirect_request['isForm'] = False
+            extdirect_request = simplejson.loads(request.raw_post_data)            
             
         else:
             return HttpResponseBadRequest('Invalid request')
