@@ -166,5 +166,6 @@ TODO
 More tests for ExtRemotingProvider
 Write tests for ExtPollingProvider
 Handle files uploads in form POST
+Write tests for ExtDirectStore
 and... more tests
 
