@@ -13,9 +13,10 @@ class ExtDirectProvider(object):
     Abstract class for different ExtDirect Providers implementations
     """
     
-    def __init__(self, url, type):        
+    def __init__(self, url, type, id=None):        
         self.type = type        
         self.url = url
+        self.id = id
     
     @property
     def _config(self):
@@ -78,8 +79,8 @@ class ExtRemotingProvider(ExtDirectProvider):
     
     type = 'remoting'
     
-    def __init__(self, namespace, url):
-        super(ExtRemotingProvider, self).__init__(url, self.type)
+    def __init__(self, namespace, url, id=None):
+        super(ExtRemotingProvider, self).__init__(url, self.type, id)
         
         self.namespace = namespace        
         self.actions = {}
@@ -99,7 +100,10 @@ class ExtRemotingProvider(ExtDirectProvider):
             for func, info in methods.items():
                 method = dict(name=func, len=info['len'], formHandler=info['form_handler'])
                 config['actions'][action].append(method)
-                
+        
+        if self.id:
+            config['id'] = self.id
+        
         return config    
 
     def register(self, method, action=None, name=None, len=0, form_handler=False, \
@@ -219,8 +223,8 @@ class ExtPollingProvider(ExtDirectProvider):
     
     type = 'polling'
     
-    def __init__(self, url, event, func=None, login_required=False, permission=None):
-        super(ExtPollingProvider, self).__init__(url, self.type)
+    def __init__(self, url, event, func=None, login_required=False, permission=None, id=None):
+        super(ExtPollingProvider, self).__init__(url, self.type, id)
         
         self.func = func
         self.event = event
@@ -234,6 +238,9 @@ class ExtPollingProvider(ExtDirectProvider):
             'url'   : self.url,
             'type'  : self.type        
         }
+        if self.id:
+            config['id'] = self.id
+            
         return config
         
     def register(self, func, login_required=False, permission=None):
