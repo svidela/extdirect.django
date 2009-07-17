@@ -171,7 +171,16 @@ class ExtRemotingProvider(ExtDirectProvider):
                 params.append(param)
                 
             #Add the `extdirect_post_data` attribute to the request instance
-            request.extdirect_post_data = params        
+            request.extdirect_post_data = params
+        else:
+            extdirect_post_data = request.POST.copy()
+            extdirect_post_data.pop('extAction')
+            extdirect_post_data.pop('extMethod')
+            extdirect_post_data.pop('extTID')
+            extdirect_post_data.pop('extType')
+            extdirect_post_data.pop('extUpload')
+            
+            request.extdirect_post_data = extdirect_post_data
         
         #finally, call the function passing the `request`
         try:
@@ -199,7 +208,7 @@ class ExtRemotingProvider(ExtDirectProvider):
                 tid = request.POST['extTID'],
                 type = request.POST['extType'],
                 isForm = True
-            )
+            )        
         elif request.raw_post_data:
             extdirect_request = simplejson.loads(request.raw_post_data)            
             

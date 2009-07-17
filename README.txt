@@ -123,9 +123,8 @@ This will be converted to a POST request::
 
 And let's check the reponse::
   
-  >>> pprint(simplejson.loads(response.content))
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
   {u'action': u'posts',
-   u'isForm': False,
    u'method': u'all',
    u'result': {u'data': [{u'tag': u'extjs'}], u'success': True},
    u'tid': 1,
@@ -146,6 +145,7 @@ Ext.Direct will make a POST request like this::
   ...                        'password': 'sancho',
   ...                        'extAction': 'user',
   ...                        'extMethod': 'update',
+  ...                        'extUpload': False,
   ...                        'extTID': 2,
   ...                        'extType': 'rpc'})
 
