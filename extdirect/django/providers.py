@@ -172,7 +172,8 @@ class ExtRemotingProvider(ExtDirectProvider):
                 
             #Add the `extdirect_post_data` attribute to the request instance
             request.extdirect_post_data = params
-        else:
+            
+        if extdirect_req.get('isForm'):
             extdirect_post_data = request.POST.copy()
             extdirect_post_data.pop('extAction')
             extdirect_post_data.pop('extMethod')
