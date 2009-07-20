@@ -36,10 +36,11 @@ class ExtDirectStore(object):
     })    
     """
     
-    def __init__(self, model, root='records', total='total', start='start', limit='limit', sort='sort', dir='dir'):
-        self.model = model
+    def __init__(self, model, extras=[], root='records', total='total', start='start', limit='limit', sort='sort', dir='dir'):
+        self.model = model        
         self.root = root
         self.total = total
+        self.extras = extras
         
         # paramNames
         self.start = start
@@ -99,6 +100,9 @@ class ExtDirectStore(object):
         for record in res:                        
             ext_rec = record['fields']
             ext_rec['id'] = record['pk']
+            for extra in self.extras:
+                ext_rec[extra[0]] = extra[1](record)
+                
             out[self.root].append(ext_rec)
         
         return out
