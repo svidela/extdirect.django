@@ -1,6 +1,9 @@
+import sys, traceback
+
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.utils import simplejson
 from django.core.serializers.json import DjangoJSONEncoder
+from django.conf import settings
 
 SCRIPT = """
 Ext.onReady(function() {
@@ -186,14 +189,14 @@ class ExtRemotingProvider(ExtDirectProvider):
         #finally, call the function passing the `request`
         try:
             response['result'] = func(request)
-        except Exception, e:
-            #FIXME: We must check settings.DEBUG to decide
-            #if we send the exception to Ext or we just raise it again.
-            response['type'] = 'exception'
-            response['message'] = str(e)
-            #FIXME: We should get more info about the exception using the `traceback` module
-            #from the python standar library.
-            #response['where'] = 
+        except Exception, e:            
+            if settings.DEBUG:
+                etype, evalue, etb = sys.exc_info()
+                response['type'] = 'exception'                
+                response['message'] = traceback.format_exception_only(etype, evalue)[0]
+                response['where'] = traceback.extract_tb(etb)[-1]
+            else:
+                raise e
         
         return response
         

@@ -9,11 +9,13 @@ from django.core.urlresolvers import clear_url_caches
 
 def setUp(self):    
     self._old_root_urlconf = settings.ROOT_URLCONF
+    self._old_debug = settings.DEBUG
     settings.ROOT_URLCONF = 'extdirect.django.test_urls'
     clear_url_caches()
 
 def tearDown(self):                
     settings.ROOT_URLCONF = self._old_root_urlconf
+    settings.DEBUG = self._old_debug
     clear_url_caches()            
 
 def suite():

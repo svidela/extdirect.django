@@ -77,7 +77,7 @@ So, we use::
   def list(request):
   
 to say, "add the `list` function to the `user` action".
-But this is optional, if we don't set the `action` explicity, the default value it's the function __module__
+But this is optional, if we don't set the `action`, the default value it's the function __module__
 attribute (replacing '.' with '_')
 
 It's importat to note, that the signature that you pass to `@remoting` it's not relevant in the server-side.
@@ -98,7 +98,7 @@ Let's register a few more functions
   ...
   >>> @remoting(tests.remote_provider)
   ... def module_action(request):  
-  ...   return dict(success=True)
+  ...   return dict(success=True)  
   
 Let's take a look to the config object for our provider::
   
@@ -165,6 +165,52 @@ Let's check the reponse::
    u'tid': u'2',
    u'type': u'rpc'}
    
+
+Now, we are going to see what happen with exceptions. Following the Ext.Direct specification
+extdirect.django will check if django it's running on debug mode (settings.DEBUG=True) and in
+that case, it will return the exception to the browser. Otherwise, the exceptions must be
+catched by the function that you expose.
+
+First, let's expose a function that raise an Exception
+
+  >>> @remoting(tests.remote_provider, action='errors')
+  ... def error(request):  
+  ...   return "A common mistake" + 1
+  
+And now, we simulate the execution on debug mode::
+
+  >>> from django.conf import settings
+  >>> settings.DEBUG = True
+
+  >>> rpc = simplejson.dumps({'action': 'errors',
+  ...                         'tid': 1,
+  ...                         'method': 'error',
+  ...                         'data':[],
+  ...                         'type':'rpc'})
+  >>> response = client.post('/remoting/router/', rpc, 'application/json')
+  >>> pprint(simplejson.loads(response.content))
+  {u'action': u'errors',
+   u'message': u"TypeError: cannot concatenate 'str' and 'int' objects\n",
+   u'method': u'error',
+   u'tid': 1,
+   u'type': u'exception',
+   u'where': [u'<doctest ...>',
+              3,
+              u'error',
+              u'return "A common mistake" + 1']}
+
+Note that in the `where` attribute, you will have [filename, lineno, function, statment] in order to
+help you at debugging time.
+
+Let's see what happen if we turn off the debug mode::
+
+  >>> settings.DEBUG = False
+  >>> response = client.post('/remoting/router/', rpc, 'application/json') #doctest: +NORMALIZE_WHITESPACE  
+  Traceback (most recent call last):
+  ...
+  TypeError: cannot concatenate 'str' and 'int' objects  
+  
+The exception raised must be catched in the server and the browser doesn't know about it.
 
 
 Using Ext.direct.PollingProvider
