@@ -1,4 +1,5 @@
 import doctest
+import unittest
 
 from extdirect.django import ExtRemotingProvider  
 remote_provider = ExtRemotingProvider(namespace='django', url='/remoting/router/')
@@ -16,7 +17,17 @@ def tearDown(self):
     clear_url_caches()            
 
 def suite():
-    return doctest.DocFileSuite('../../README.txt',
-                                setUp=setUp,
-                                tearDown=tearDown)    
+    optionflags = doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS
+    globs = {}
+    
+    suite = unittest.TestSuite()
+
+    suite.addTest(doctest.DocFileSuite(
+        '../../README.txt',
+        optionflags=optionflags,
+        setUp=setUp,
+        tearDown=tearDown,
+        globs=globs))
+    
+    return suite
 

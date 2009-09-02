@@ -1,0 +1,9 @@
+
+ExtDirectStore
+==============
+
+In order to use the ExtDirectStore class, you will need to add in settings.py::
+
+    SERIALIZATION_MODULES = {
+        "extdirect" : "extdirect.django.serializer"        
+    }

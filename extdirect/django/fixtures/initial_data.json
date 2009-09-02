@@ -1,0 +1,15 @@
+[{
+    "pk": 1,
+    "model": "django.ExtDirectStoreModel",
+    "fields": {
+        "name": "Homer"
+    }
+},{
+    "pk": 2,
+    "model": "django.ExtDirectStoreModel",
+    "fields": {
+        "name": "Joe"
+    }
+}]
+
+

@@ -9,7 +9,7 @@ included in `ExtJS 3.0`_ following the `Ext.Direct specification`_
 .. _`Ext.Direct specification`: http://extjs.com/products/extjs/direct.php
   
 
-Take a look to tests.py and test_urls.py to see the needed setup.
+Take a look to docs/INSTALL.txt, tests.py and test_urls.py to see the needed setup.
 
 We need to set the __name__ variable to access to function.__module__ later
 
@@ -19,6 +19,9 @@ Let's create a test browser::
 
   >>> from django.test.client import Client
   >>> client = Client()
+
+Register the ExtDirect provider
+-------------------------------
 
 Now, we should be able to get the `provider.js` that will register
 our ExtDirect provider. As we didn't register any function yet, the `actions` for this provider will
@@ -36,6 +39,9 @@ be an empty config object ::
 So, all you have to do to register the Ext.DirectProvider in your web application is::
 
   <script src="/remoting/provider.js/"></script>
+  
+Using Ext.direct.RemotingProvider
+---------------------------------
   
 We will use the `_config` property from now on, (the config object passed to addProvider function)::
   
@@ -160,12 +166,86 @@ Let's check the reponse::
    u'type': u'rpc'}
    
 
+
+Using Ext.direct.PollingProvider
+--------------------------------
+TODO
+
+Using the ExtDirectStore helper class
+-------------------------------------
+
+ExtDirectStore it's a helper class that you may want to use to load a given
+Ext.data.DirectStore in ExtJS.
+
+It's important to note that you should use len=1 (python) and paramsAsHash=true (javascript) in
+order to get everything working
+
+Let's see the simplest use case::
+
+  >>> from extdirect.django import ExtDirectStore
+  >>> from extdirect.django.models import ExtDirectStoreModel
+  >>> list = ExtDirectStore(ExtDirectStoreModel)
+  >>> pprint(list.query()) #doctest: +NORMALIZE_WHITESPACE
+  {'records': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}], 'total': 2}
+  
+You may want to pass a keyword arguments to the method `query` in order to filter your query.
+Usually, you will use this in a function exposed with @remoting or @polling, and the keyword
+arguments could be the variable `request.extdirect_post_data` or part of it. ::
+
+  >>> pprint(list.query(id=1)) #doctest: +NORMALIZE_WHITESPACE
+  {'records': [{'id': 1, 'name': u'Homer'}], 'total': 1}
+  
+You are able to change (or set at creation time) the keywords used by ExtDirectStore::
+
+  >>> list.root = 'users'
+  >>> list.total = 'result'
+  >>> pprint(list.query()) #doctest: +NORMALIZE_WHITESPACE
+  {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
+  
+If you are using Paging, ExtDirectStore will take care::
+
+  >>> pprint(list.query(start=0, limit=2)) #doctest: +NORMALIZE_WHITESPACE
+  {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
+
+  >>> pprint(list.query(start=0, limit=1)) #doctest: +NORMALIZE_WHITESPACE
+  {'result': 1, 'users': [{'id': 1, 'name': u'Homer'}]}
+
+  >>> pprint(list.query(start=1, limit=1)) #doctest: +NORMALIZE_WHITESPACE
+  {'result': 1, 'users': [{'id': 2, 'name': u'Joe'}]}
+  
+Again, you are free to change the keywords `start` and `limit` to whatever you want to::
+
+  >>> list.start = 'from'
+  >>> list.limit = 'to'
+  >>> kw = {'from':0, 'to':1}
+  >>> pprint(list.query(**kw)) #doctest: +NORMALIZE_WHITESPACE
+  {'result': 1, 'users': [{'id': 1, 'name': u'Homer'}]}
+  
+Sorting it's also included::
+
+  >>> pprint(list.query(sort='name', dir='ASC')) #doctest: +NORMALIZE_WHITESPACE
+  {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
+
+  >>> pprint(list.query(sort='name', dir='DESC')) #doctest: +NORMALIZE_WHITESPACE
+  {'result': 2, 'users': [{'id': 2, 'name': u'Joe'}, {'id': 1, 'name': u'Homer'}]}
+  
+And guess what...? You are able to change this keywords too::
+
+  >>> list.sort = 'sort_field'
+  >>> list.dir = 'sort_order'
+  
+  >>> pprint(list.query(sort_field='name', sort_order='ASC')) #doctest: +NORMALIZE_WHITESPACE
+  {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
+
+  >>> pprint(list.query(sort_field='name', sort_order='DESC')) #doctest: +NORMALIZE_WHITESPACE
+  {'result': 2, 'users': [{'id': 2, 'name': u'Joe'}, {'id': 1, 'name': u'Homer'}]}
+  
 TODO
 ====
 
 More tests for ExtRemotingProvider
+More tests for ExtDirectStore
 Write tests for ExtPollingProvider
 Handle files uploads in form POST
-Write tests for ExtDirectStore
 and... more tests
 
