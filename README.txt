@@ -286,6 +286,38 @@ And guess what...? You are able to change this keywords too::
   >>> pprint(list.query(sort_field='name', sort_order='DESC')) #doctest: +NORMALIZE_WHITESPACE
   {'result': 2, 'users': [{'id': 2, 'name': u'Joe'}, {'id': 1, 'name': u'Homer'}]}
   
+Finally, sometimes you will need to run complex queries. We have two options for that.
+First, you could pass or set, an `extras` parameter to the ExtDirectStore. This should be a list of
+tuples like::
+
+  >>> extras = [('name_size', lambda rec: len(rec.name)),('name_upper', lambda rec: rec.name.upper())]
+  >>> list.extras = extras
+  >>> pprint(list.query()) #doctest: +NORMALIZE_WHITESPACE
+  {'result': 2,
+   'users': [{'id': 1,
+              'name': u'Homer',
+              'name_size': 5,
+              'name_upper': u'HOMER'},
+             {'id': 2,
+              'name': u'Joe',
+              'name_size': 3,
+              'name_upper': u'JOE'}]}
+              
+  >>> list.extras = []
+
+Each item in the `extras` list should be a tuple with a attribute name and a lambda
+function to get the value for that attribute. This function will be called for each object
+in the queryset.
+
+The second option to run complex queries it's very simple::
+
+  >>> qs = ExtDirectStoreModel.objects.exclude(id=2)
+  >>> pprint(list.query(qs)) #doctest: +NORMALIZE_WHITESPACE
+  {'result': 1, 'users': [{'id': 1, 'name': u'Homer'}]}
+  
+Here, we just need to pass a valid queryset to the `query` function. Using this queryset, ExtDirectStore, will
+apply everything that we already saw (filter, paging, sorting)
+
 TODO
 ====
 
