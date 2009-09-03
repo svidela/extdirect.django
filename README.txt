@@ -43,7 +43,7 @@ So, all you have to do to register the Ext.DirectProvider in your web applicatio
 Using Ext.direct.RemotingProvider
 ---------------------------------
   
-We will use the `_config` property from now on, (the config object passed to addProvider function)::
+We will use the `_config` property from now on, (the config object passed to `addProvider` function)::
   
   >>> from pprint import pprint
   >>> from extdirect.django import remoting
@@ -55,7 +55,7 @@ We will use the `_config` property from now on, (the config object passed to add
    'type': 'remoting',
    'url': '/remoting/router/'}
    
-Ok, now we are going to register a new function on our provider instance (tests.remote_provider)
+Ok, now we are going to register a new function on our provider instance (`tests.remote_provider`)
 
   >>> @remoting(tests.remote_provider, action='user')
   ... def list(request):
@@ -82,8 +82,9 @@ attribute (replacing '.' with '_')
 
 It's importat to note, that the signature that you pass to `@remoting` it's not relevant in the server-side.
 The functions that we expose to Ext.Direct should receive just the `request` instace like any other django view.
-When the function it's a form handler (form_handler=True), all the parameters will be present in
-`request.POST`. Otherwise, the parameters will be available in `request.extdirect_post_data`.
+The parameters for the exposed function, will be available in `request.extdirect_post_data`
+(when the function it's a form handler (form_handler=True), all the parameters will be also available
+in `request.POST`).
 
 Let's register a few more functions
 
@@ -103,9 +104,7 @@ Let's register a few more functions
 Let's take a look to the config object for our provider::
   
   >>> pprint(tests.remote_provider._config) #doctest: +NORMALIZE_WHITESPACE
-  {'actions': {'extdirect_django_doctest': [{'formHandler': False,
-                                             'len': 0,
-                                             'name': 'module_action'}],
+  {'actions': {'extdirect_django_doctest': [{'formHandler': False, 'len': 0, 'name': 'module_action'}],
                'posts': [{'formHandler': False, 'len': 1, 'name': 'all'}],
                'user': [{'formHandler': False, 'len': 0, 'name': 'list'},
                         {'formHandler': True, 'len': 0, 'name': 'update'}]},
@@ -210,7 +209,7 @@ Let's see what happen if we turn off the debug mode::
   ...
   TypeError: cannot concatenate 'str' and 'int' objects  
   
-The exception raised must be catched in the server and the browser doesn't know about it.
+The exception raised must be catched in the server and the browser doesn't know anything about it.
 
 
 Using Ext.direct.PollingProvider
@@ -234,9 +233,35 @@ Let's see the simplest use case::
   >>> pprint(list.query()) #doctest: +NORMALIZE_WHITESPACE
   {'records': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}], 'total': 2}
   
-You may want to pass a keyword arguments to the method `query` in order to filter your query.
-Usually, you will use this in a function exposed with @remoting or @polling, and the keyword
-arguments could be the variable `request.extdirect_post_data` or part of it. ::
+So a quick and almost complete example could be:
+
+In django::
+
+  @remoting(provider, action='user', len=1)
+  def load_users(request):
+      data = request.extdirect_post_data[0]
+      users = ExtDirectStore(User)
+      return users.query(**data)
+
+In ExtJS::
+
+  new Ext.data.DirectStore({
+        paramsAsHash: true, 
+        directFn: django.user.load_users,        
+        fields: [
+            {name: 'first_name'}, 
+            {name: 'last_name'}, 
+            {name: 'id'}
+        ],
+        // defaults in django
+        root: 'records',
+        idProperty: 'id',
+        totalProperty: 'total',
+        ...
+  })    
+  
+As we saw in the example above, you may want to pass a keyword arguments to the
+method `query` in order to filter your query::
 
   >>> pprint(list.query(id=1)) #doctest: +NORMALIZE_WHITESPACE
   {'records': [{'id': 1, 'name': u'Homer'}], 'total': 1}
@@ -290,7 +315,10 @@ Finally, sometimes you will need to run complex queries. We have two options for
 First, you could pass or set, an `extras` parameter to the ExtDirectStore. This should be a list of
 tuples like::
 
-  >>> extras = [('name_size', lambda rec: len(rec.name)),('name_upper', lambda rec: rec.name.upper())]
+  >>> def name_size(rec):
+  ...    return len(rec.name)
+  >>>
+  >>> extras = [('name_size', name_size),('name_upper', lambda rec: rec.name.upper())]
   >>> list.extras = extras
   >>> pprint(list.query()) #doctest: +NORMALIZE_WHITESPACE
   {'result': 2,
@@ -305,25 +333,30 @@ tuples like::
               
   >>> list.extras = []
 
-Each item in the `extras` list should be a tuple with a attribute name and a lambda
-function to get the value for that attribute. This function will be called for each object
-in the queryset.
+Each item in the `extras` list should be a tuple with:
+ - attribute name
+ - callable object (taking only one required parameter)
 
-The second option to run complex queries it's very simple::
+The callable object in each tuple, will be executed for each object in the queryset
+to get the value for that attribute.
+
+The second option to run complex queries it's very simple.::
 
   >>> qs = ExtDirectStoreModel.objects.exclude(id=2)
   >>> pprint(list.query(qs)) #doctest: +NORMALIZE_WHITESPACE
   {'result': 1, 'users': [{'id': 1, 'name': u'Homer'}]}
   
-Here, we just need to pass a valid queryset to the `query` function. Using this queryset, ExtDirectStore, will
-apply everything that we already saw (filter, paging, sorting)
+Here, we just need to pass a valid queryset to the `query` function. Using this
+queryset, ExtDirectStore, will apply everything that we already saw
+(filter, paging, sorting). You are able to create a complex queryset using
+all of the Django ORM features and then pass it to the method `query`.
 
 TODO
 ====
 
-More tests for ExtRemotingProvider
-More tests for ExtDirectStore
-Write tests for ExtPollingProvider
-Handle files uploads in form POST
-and... more tests
+ - More tests for ExtRemotingProvider
+ - More tests for ExtDirectStore
+ - Write tests for ExtPollingProvider
+ - Handle files uploads in form POST
+ - and... more tests
 

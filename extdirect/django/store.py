@@ -4,36 +4,6 @@ from django.core.paginator import Paginator, InvalidPage, EmptyPage
 class ExtDirectStore(object):
     """
     Implement the server-side needed to load an Ext.data.DirectStore
-    Usage::
-    
-    IMPORTANT: len=1 (python) and paramsAsHash=true (javascript) are required !!!
-    
-    @remoting(provider, action='user', len=1)
-    def load_users(request):
-        data = request.extdirect_post_data[0]
-        #Just create an instance of ExtDirectStore with a db model class
-        users = ExtDirectStore(User)
-        # If ExtJS add any parameter usign baseParams or any other method,
-        # you must ensure that all the parameter are accepted by QuerySet.filter
-        # http://docs.djangoproject.com/en/dev/ref/models/querysets/
-        return users.query(**data)
-        
-    The ExtJS Direct Store should look like::
-    
-    new Ext.data.DirectStore({
-        paramsAsHash: true, 
-        directFn: django.user.load_users,        
-        fields: [
-            {name: 'first_name'}, 
-            {name: 'last_name'}, 
-            {name: 'id'}
-        ],
-        // defaults in django
-        root: 'records',
-        idProperty: 'id',
-        totalProperty: 'total',
-        ...
-    })    
     """
     
     def __init__(self, model, extras=[], root='records', total='total', start='start', limit='limit', sort='sort', dir='dir'):
