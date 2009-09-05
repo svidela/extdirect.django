@@ -20,8 +20,8 @@ Let's create a test browser::
   >>> from django.test.client import Client
   >>> client = Client()
 
-Register the ExtDirect provider
--------------------------------
+Register the ExtDirect remoting provider
+----------------------------------------
 
 Now, we should be able to get the `provider.js` that will register
 our ExtDirect provider. As we didn't register any function yet, the `actions` for this provider will
@@ -36,7 +36,7 @@ be an empty config object ::
                               "actions": {}});
   });
   
-So, all you have to do to register the Ext.DirectProvider in your web application is::
+So, all you have to do to register the Ext.RemotingProvider in your web application is::
 
   <script src="/remoting/provider.js/"></script>
   
@@ -211,10 +211,59 @@ Let's see what happen if we turn off the debug mode::
   
 The exception raised must be catched in the server and the browser doesn't know anything about it.
 
+Register the ExtDirect polling provider
+---------------------------------------
+
+  >>> response = client.get('/polling/provider.js/')
+  >>> print response.content #doctest: +NORMALIZE_WHITESPACE
+  Ext.onReady(function() {
+      Ext.Direct.addProvider({"url": "/polling/router/", "type": "polling"});
+  });
+  
+So, all you have to do to register the Ext.PollingProvider in your web application is::
+
+  <script src="/polling/provider.js/"></script>
 
 Using Ext.direct.PollingProvider
 --------------------------------
-TODO
+
+In this section we are going to show how you can use the Ext.direct.PollingProvider.
+Ext.direct.PollingProvider, provides for repetitive polling of the server at
+distinct intervals (defaults to 3000 - every 3 seconds).
+
+As we didn't set a function to our polling provider, if call it we should get an exception::
+
+  >>> response = client.get('/polling/router/') #doctest: +NORMALIZE_WHITESPACE
+  Traceback (most recent call last):
+  ...
+  RuntimeError: The server provider didn't register a function to run yet
+
+But, as with ExtRemotingProvider, when Django it's in debug mode, the exception it's
+returned to the browser::
+
+  >>> settings.DEBUG = True
+  >>> response = client.get('/polling/router/') 
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  {u'message': u"RuntimeError: The server provider didn't register a function to run yet\n",
+   u'type': u'exception',
+   u'where': [u'...',
+              287,
+              u'router',
+              u'raise RuntimeError("The server provider didn\'t register a function to run yet")']}
+
+  >>> settings.DEBUG = False
+  
+So, let's declare a simple function an assign it to our polling provider::
+
+  >>> from extdirect.django import polling
+  >>> @polling(tests.polling_provider)
+  ... def my_polling(request):
+  ...   return "I'm tired..."
+
+  >>> response = client.get('/polling/router/') 
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  {u'data': u"I'm tired...", u'name': u'some-event', u'type': u'event'}
+
 
 Using the ExtDirectStore helper class
 -------------------------------------
@@ -263,25 +312,25 @@ In ExtJS::
 As we saw in the example above, you may want to pass a keyword arguments to the
 method `query` in order to filter your query::
 
-  >>> pprint(list.query(id=1)) #doctest: +NORMALIZE_WHITESPACE
+  >>> pprint(list.query(id=1))
   {'records': [{'id': 1, 'name': u'Homer'}], 'total': 1}
   
 You are able to change (or set at creation time) the keywords used by ExtDirectStore::
 
   >>> list.root = 'users'
   >>> list.total = 'result'
-  >>> pprint(list.query()) #doctest: +NORMALIZE_WHITESPACE
+  >>> pprint(list.query())
   {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
   
 If you are using Paging, ExtDirectStore will take care::
 
-  >>> pprint(list.query(start=0, limit=2)) #doctest: +NORMALIZE_WHITESPACE
+  >>> pprint(list.query(start=0, limit=2))
   {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
 
-  >>> pprint(list.query(start=0, limit=1)) #doctest: +NORMALIZE_WHITESPACE
+  >>> pprint(list.query(start=0, limit=1))
   {'result': 1, 'users': [{'id': 1, 'name': u'Homer'}]}
 
-  >>> pprint(list.query(start=1, limit=1)) #doctest: +NORMALIZE_WHITESPACE
+  >>> pprint(list.query(start=1, limit=1))
   {'result': 1, 'users': [{'id': 2, 'name': u'Joe'}]}
   
 Again, you are free to change the keywords `start` and `limit` to whatever you want to::
@@ -289,15 +338,15 @@ Again, you are free to change the keywords `start` and `limit` to whatever you w
   >>> list.start = 'from'
   >>> list.limit = 'to'
   >>> kw = {'from':0, 'to':1}
-  >>> pprint(list.query(**kw)) #doctest: +NORMALIZE_WHITESPACE
+  >>> pprint(list.query(**kw))
   {'result': 1, 'users': [{'id': 1, 'name': u'Homer'}]}
   
 Sorting it's also included::
 
-  >>> pprint(list.query(sort='name', dir='ASC')) #doctest: +NORMALIZE_WHITESPACE
+  >>> pprint(list.query(sort='name', dir='ASC'))
   {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
 
-  >>> pprint(list.query(sort='name', dir='DESC')) #doctest: +NORMALIZE_WHITESPACE
+  >>> pprint(list.query(sort='name', dir='DESC'))
   {'result': 2, 'users': [{'id': 2, 'name': u'Joe'}, {'id': 1, 'name': u'Homer'}]}
   
 And guess what...? You are able to change this keywords too::
@@ -305,10 +354,10 @@ And guess what...? You are able to change this keywords too::
   >>> list.sort = 'sort_field'
   >>> list.dir = 'sort_order'
   
-  >>> pprint(list.query(sort_field='name', sort_order='ASC')) #doctest: +NORMALIZE_WHITESPACE
+  >>> pprint(list.query(sort_field='name', sort_order='ASC'))
   {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
 
-  >>> pprint(list.query(sort_field='name', sort_order='DESC')) #doctest: +NORMALIZE_WHITESPACE
+  >>> pprint(list.query(sort_field='name', sort_order='DESC'))
   {'result': 2, 'users': [{'id': 2, 'name': u'Joe'}, {'id': 1, 'name': u'Homer'}]}
   
 Finally, sometimes you will need to run complex queries. We have two options for that.
@@ -343,7 +392,7 @@ to get the value for that attribute.
 The second option to run complex queries it's very simple.::
 
   >>> qs = ExtDirectStoreModel.objects.exclude(id=2)
-  >>> pprint(list.query(qs)) #doctest: +NORMALIZE_WHITESPACE
+  >>> pprint(list.query(qs))
   {'result': 1, 'users': [{'id': 1, 'name': u'Homer'}]}
   
 Here, we just need to pass a valid queryset to the `query` function. Using this
@@ -351,12 +400,23 @@ queryset, ExtDirectStore, will apply everything that we already saw
 (filter, paging, sorting). You are able to create a complex queryset using
 all of the Django ORM features and then pass it to the method `query`.
 
+Finally, let's see what happen when you define ForeignKey in your models.
+
+  >>> from extdirect.django.models import Model
+  >>> ds = ExtDirectStore(Model)
+  >>> pprint(ds.query())
+  {'records': [{'fk_model': 1, 'fk_model_id': 1, 'id': 1}], 'total': 1}
+  
+For each, foreign key field (`fk_model`), you will get two attributes with the same value:
+ - fk_model
+ - fk_model_id
+
 TODO
 ====
 
  - More tests for ExtRemotingProvider
  - More tests for ExtDirectStore
- - Write tests for ExtPollingProvider
+ - More tests for ExtPollingProvider
  - Handle files uploads in form POST
  - and... more tests
 

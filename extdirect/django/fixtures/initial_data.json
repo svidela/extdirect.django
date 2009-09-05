@@ -1,14 +1,26 @@
 [{
     "pk": 1,
+    "model": "django.FKModel",
+    "fields": {
+        "attr": "Something"
+    }
+},{
+    "pk": 1,
+    "model": "django.Model",
+    "fields": {
+        "fk_model": 1
+    }
+},{
+    "pk": 1,
     "model": "django.ExtDirectStoreModel",
     "fields": {
-        "name": "Homer"
+        "name": "Homer"        
     }
 },{
     "pk": 2,
     "model": "django.ExtDirectStoreModel",
     "fields": {
-        "name": "Joe"
+        "name": "Joe"        
     }
 }]
 

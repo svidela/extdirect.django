@@ -259,7 +259,7 @@ class ExtPollingProvider(ExtDirectProvider):
     def register(self, func, login_required=False, permission=None):
         self.func = func
         self.login_required = login_required
-        self.permission = premission
+        self.permission = permission
     
     def router(self, request):
         response = {}
@@ -286,9 +286,13 @@ class ExtPollingProvider(ExtDirectProvider):
             else:
                 raise RuntimeError("The server provider didn't register a function to run yet")
                 
-        except Exception, e:
-            #FIXME: See the except comments in ExtRemotingProvider class
-            response['type'] = 'exception'
-            response['message'] = str(e)
+        except Exception, e:            
+            if settings.DEBUG:
+                etype, evalue, etb = sys.exc_info()
+                response['type'] = 'exception'                
+                response['message'] = traceback.format_exception_only(etype, evalue)[0]
+                response['where'] = traceback.extract_tb(etb)[-1]
+            else:
+                raise e
         
         return HttpResponse(simplejson.dumps(response, cls=DjangoJSONEncoder), mimetype='application/json')
