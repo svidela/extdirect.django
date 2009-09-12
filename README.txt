@@ -164,6 +164,11 @@ Let's check the reponse::
    u'tid': u'2',
    u'type': u'rpc'}
    
+If you use `fileUpload`_ in your ExtJS form, the files will be available in
+`request.FILES`, just as Django handles the `File Uploads`_.
+
+.. _`fileUpload`: http://www.extjs.com/deploy/dev/docs/?class=Ext.form.BasicForm#Ext.form.BasicForm-fileUpload
+.. _`File Uploads`: http://docs.djangoproject.com/en/dev/topics/http/file-uploads/
 
 Now, we are going to see what happen with exceptions. Following the Ext.Direct specification
 extdirect.django will check if django it's running on debug mode (settings.DEBUG=True) and in
@@ -247,7 +252,7 @@ returned to the browser::
   {u'message': u"RuntimeError: The server provider didn't register a function to run yet\n",
    u'type': u'exception',
    u'where': [u'...',
-              287,
+              293,
               u'router',
               u'raise RuntimeError("The server provider didn\'t register a function to run yet")']}
 
@@ -410,13 +415,3 @@ Finally, let's see what happen when you define ForeignKey in your models.
 For each, foreign key field (`fk_model`), you will get two attributes with the same value:
  - fk_model
  - fk_model_id
-
-TODO
-====
-
- - More tests for ExtRemotingProvider
- - More tests for ExtDirectStore
- - More tests for ExtPollingProvider
- - Handle files uploads in form POST
- - and... more tests
-

@@ -228,8 +228,14 @@ class ExtRemotingProvider(ExtDirectProvider):
         elif isinstance(extdirect_request, dict):
            #single call
            response = self.dispatcher(request, extdirect_request)
-           
-        return HttpResponse(simplejson.dumps(response, cls=DjangoJSONEncoder), mimetype='application/json')
+        
+        if request.POST.get('extUpload', False):
+            #http://www.extjs.com/deploy/dev/docs/?class=Ext.form.BasicForm#Ext.form.BasicForm-fileUpload
+            mimetype = 'text/html'
+        else:
+            mimetype = 'application/json'
+            
+        return HttpResponse(simplejson.dumps(response, cls=DjangoJSONEncoder), mimetype=mimetype)
         
 
 class ExtPollingProvider(ExtDirectProvider):

@@ -11,6 +11,9 @@ setup(name='extdirect.django',
       # Get more strings from http://www.python.org/pypi?%3Aaction=list_classifiers
       classifiers=[
         "Programming Language :: Python",
+        "Framework :: Django",
+        "License :: OSI Approved :: BSD License",
+        "Operating System :: OS Independent",
         "Topic :: Software Development :: Libraries :: Python Modules",
         ],
       keywords='',

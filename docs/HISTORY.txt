@@ -1,8 +1,8 @@
-Changelog
-=========
+CHANGES
+*******
 
-0.1 - Unreleased
-----------------
+0.1 (2009-09-11)
+================
 
-* Initial release
+* Initial public release
 
