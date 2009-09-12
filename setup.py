@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 import os
 
-version = '0.1'
+version = '0.2'
 
 setup(name='extdirect.django',
       version=version,
-      description="",
+      description="Ext.Direct implementation for Django",
       long_description=open("README.txt").read() + "\n" +
                        open(os.path.join("docs", "HISTORY.txt")).read(),
       # Get more strings from http://www.python.org/pypi?%3Aaction=list_classifiers
@@ -19,8 +19,8 @@ setup(name='extdirect.django',
       keywords='',
       author='Santiago Videla',
       author_email='santiago.videla@gmail.com',
-      url='',
-      license='',      
+      url='http://github.com/gsancho/extdirect.django/tree/master',
+      license='BSD',      
       namespace_packages=['extdirect'],
       packages=find_packages(exclude=['ez_setup']),
       test_suite="extdirect.django.tests",

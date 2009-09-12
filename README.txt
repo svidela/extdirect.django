@@ -1,8 +1,8 @@
 Introduction
 ============
 
-This package provides a simple way to expose functions/views in django to the `Ext.Direct`_ package
-included in `ExtJS 3.0`_ following the `Ext.Direct specification`_
+This package provides a simple way to expose functions/views in django to the
+`Ext.Direct`_ package included in `ExtJS 3.0`_ following the `Ext.Direct specification`_
 
 .. _`ExtJS 3.0`: http://www.extjs.com/
 .. _`Ext.Direct`: http://extjs.com/blog/2009/05/13/introducing-ext-direct/
@@ -24,8 +24,8 @@ Register the ExtDirect remoting provider
 ----------------------------------------
 
 Now, we should be able to get the `provider.js` that will register
-our ExtDirect provider. As we didn't register any function yet, the `actions` for this provider will
-be an empty config object ::
+our ExtDirect provider. As we didn't register any function yet, the `actions`
+for this provider will be an empty config object ::
   
   >>> response = client.get('/remoting/provider.js/')
   >>> print response.content #doctest: +NORMALIZE_WHITESPACE  
@@ -43,7 +43,8 @@ So, all you have to do to register the Ext.RemotingProvider in your web applicat
 Using Ext.direct.RemotingProvider
 ---------------------------------
   
-We will use the `_config` property from now on, (the config object passed to `addProvider` function)::
+We will use the `_config` property from now on, (the config object passed to
+`addProvider` function)::
   
   >>> from pprint import pprint
   >>> from extdirect.django import remoting
@@ -80,13 +81,14 @@ to say, "add the `list` function to the `user` action".
 But this is optional, if we don't set the `action`, the default value it's the function __module__
 attribute (replacing '.' with '_')
 
-It's importat to note, that the signature that you pass to `@remoting` it's not relevant in the server-side.
-The functions that we expose to Ext.Direct should receive just the `request` instace like any other django view.
-The parameters for the exposed function, will be available in `request.extdirect_post_data`
-(when the function it's a form handler (form_handler=True), all the parameters will be also available
-in `request.POST`).
+It's important to note, that the signature that you pass to `@remoting` it's not
+relevant in the server-side. The functions that we expose to Ext.Direct should
+receive just the `request` instace like any other django view. The parameters for
+the exposed function, will be available in `request.extdirect_post_data` (when
+the function it's a form handler (form_handler=True), all the parameters will be
+also available in `request.POST`).
 
-Let's register a few more functions
+Let's register a few more functions::
 
   >>> @remoting(tests.remote_provider, action='user', form_handler=True)
   ... def update(request):  
@@ -135,7 +137,8 @@ And let's check the reponse::
    u'tid': 1,
    u'type': u'rpc'}
    
-Let's try with a formHandler, you may want to see the `Ext.Direct Form Integration`_ for a live example.
+Let's try with a formHandler, you may want to see the `Ext.Direct Form Integration`_
+for a live example.
 
 .. _`Ext.Direct Form Integration`: http://extjs.com/deploy/dev/examples/direct/direct-form.php
 
