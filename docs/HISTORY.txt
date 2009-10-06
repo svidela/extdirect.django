@@ -4,6 +4,8 @@ CHANGES
 0.3dev (Unreleased)
 ===================
 
+* Bugfix: ExtDirectStore returns wrong 'total' parameter
+
 0.2 (2009-09-11)
 ================
 
