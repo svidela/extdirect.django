@@ -51,6 +51,7 @@ class ExtDirectStore(object):
                 
         if not paginate:
             objects = queryset
+            total = queryset.count()
         else:
             paginator = Paginator(queryset, limit)
             total = paginator.count
@@ -70,5 +71,5 @@ class ExtDirectStore(object):
             'root': self.root,
             'total' : self.total
         }
-        res = serialize('extdirect', queryset, meta=meta, extras=self.extras)
+        res = serialize('extdirect', queryset, meta=meta, extras=self.extras, total=total)
         return res

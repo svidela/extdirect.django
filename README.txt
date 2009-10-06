@@ -336,10 +336,10 @@ If you are using Paging, ExtDirectStore will take care::
   {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
 
   >>> pprint(list.query(start=0, limit=1))
-  {'result': 1, 'users': [{'id': 1, 'name': u'Homer'}]}
+  {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}]}
 
   >>> pprint(list.query(start=1, limit=1))
-  {'result': 1, 'users': [{'id': 2, 'name': u'Joe'}]}
+  {'result': 2, 'users': [{'id': 2, 'name': u'Joe'}]}
   
 Again, you are free to change the keywords `start` and `limit` to whatever you want to::
 
@@ -347,7 +347,7 @@ Again, you are free to change the keywords `start` and `limit` to whatever you w
   >>> list.limit = 'to'
   >>> kw = {'from':0, 'to':1}
   >>> pprint(list.query(**kw))
-  {'result': 1, 'users': [{'id': 1, 'name': u'Homer'}]}
+  {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}]}
   
 Sorting it's also included::
 
