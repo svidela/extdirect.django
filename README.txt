@@ -11,7 +11,7 @@ This package provides a simple way to expose functions/views in django to the
 
 Take a look to docs/INSTALL.txt, tests.py and test_urls.py to see the needed setup.
 
-We need to set the __name__ variable to access to function.__module__ later
+We need to set the __name__ variable to access to function.__module__ later::
 
   >>> __name__ = 'extdirect.django.doctest'
 
@@ -40,6 +40,41 @@ So, all you have to do to register the Ext.RemotingProvider in your web applicat
 
   <script src="/remoting/provider.js/"></script>
   
+Direct access to the descriptor API
+-----------------------------------
+
+You may want to access to the whole descriptor API of your ExtDirect Remoting
+provider. In that case, we could make a request as follows::
+
+  >>> response = client.get('/remoting/api/')
+  >>> print response.content #doctest: +NORMALIZE_WHITESPACE
+  Ext.ns('django');
+  django.Descriptor = {"url": "/remoting/router/",
+                       "type": "remoting",
+                       "namespace": "django",
+                       "actions": {}}
+
+Note that this response it's javascript code::
+
+  >>> print response.__getitem__('content-type')
+  text/javascript
+  
+But according to the Ext.Direct specification, we should also
+be able to get the descriptor API as a JSON packet::
+
+  >>> response = client.get('/remoting/api/', {'format': 'json'})
+  >>> print response.content #doctest: +NORMALIZE_WHITESPACE
+  {"url": "/remoting/router/",
+   "type": "remoting",
+   "namespace": "django",
+   "actions": {},
+   "descriptor": "django.Descriptor"}
+   
+And just to be sure::
+
+  >>> print response.__getitem__('content-type')
+  application/json
+  
 Using Ext.direct.RemotingProvider
 ---------------------------------
   
@@ -56,14 +91,14 @@ We will use the `_config` property from now on, (the config object passed to
    'type': 'remoting',
    'url': '/remoting/router/'}
    
-Ok, now we are going to register a new function on our provider instance (`tests.remote_provider`)
+Ok, now we are going to register a new function on our provider instance (`tests.remote_provider`)::
 
   >>> @remoting(tests.remote_provider, action='user')
   ... def list(request):
   ...   pass
   ...
 
-By default, `formHandler` will be set to false, `len` to 0 and `name` to the function name.
+By default, `formHandler` will be set to false, `len` to 0 and `name` to the function name::
 
   >>> pprint(tests.remote_provider._config)
   {'actions': {'user': [{'formHandler': False, 'len': 0, 'name': 'list'}]},
@@ -178,7 +213,7 @@ extdirect.django will check if django it's running on debug mode (settings.DEBUG
 that case, it will return the exception to the browser. Otherwise, the exceptions must be
 catched by the function that you expose.
 
-First, let's expose a function that raise an Exception
+First, let's expose a function that raise an Exception::
 
   >>> @remoting(tests.remote_provider, action='errors')
   ... def error(request):  
@@ -222,6 +257,8 @@ The exception raised must be catched in the server and the browser doesn't know 
 Register the ExtDirect polling provider
 ---------------------------------------
 
+As we did above with the ExtDirect Remoting provider::
+
   >>> response = client.get('/polling/provider.js/')
   >>> print response.content #doctest: +NORMALIZE_WHITESPACE
   Ext.onReady(function() {
@@ -255,7 +292,7 @@ returned to the browser::
   {u'message': u"RuntimeError: The server provider didn't register a function to run yet\n",
    u'type': u'exception',
    u'where': [u'...',
-              293,
+              311,
               u'router',
               u'raise RuntimeError("The server provider didn\'t register a function to run yet")']}
 
@@ -408,7 +445,7 @@ queryset, ExtDirectStore, will apply everything that we already saw
 (filter, paging, sorting). You are able to create a complex queryset using
 all of the Django ORM features and then pass it to the method `query`.
 
-Finally, let's see what happen when you define ForeignKey in your models.
+Finally, let's see what happen when you define ForeignKey in your models::
 
   >>> from extdirect.django.models import Model
   >>> ds = ExtDirectStore(Model)

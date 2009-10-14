@@ -73,7 +73,6 @@ class ExtDirectProvider(object):
         js =  SCRIPT % config
                 
         return HttpResponse(js, mimetype='text/javascript')
-
     
 class ExtRemotingProvider(ExtDirectProvider):
     """
@@ -82,11 +81,30 @@ class ExtRemotingProvider(ExtDirectProvider):
     
     type = 'remoting'
     
-    def __init__(self, namespace, url, id=None):
+    def __init__(self, namespace, url, id=None, descriptor='Descriptor'):
         super(ExtRemotingProvider, self).__init__(url, self.type, id)
         
         self.namespace = namespace        
         self.actions = {}
+        self.descriptor = descriptor
+
+
+    def api(self, request):
+        conf = self._config
+        descriptor = self.namespace + '.' + self.descriptor
+        
+        if request.GET.has_key('format') and request.GET['format'] == 'json':
+            conf['descriptor'] = descriptor
+            mimetype = 'application/json'
+            response = simplejson.dumps(conf)
+        else:
+            response = """
+Ext.ns('%s');
+%s = %s
+""" % (self.namespace, descriptor, simplejson.dumps(self._config))
+            mimetype = 'text/javascript'
+            
+        return HttpResponse(response, mimetype=mimetype)
         
     @property
     def _config(self):

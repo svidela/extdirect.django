@@ -5,6 +5,8 @@ CHANGES
 ===================
 
 * Bugfix: ExtDirectStore returns wrong 'total' parameter
+* Add a direct access to the descriptor API with an optional parameter
+  `format=json` to get the descriptor as JavaScript code or as a JSON packet
 
 0.2 (2009-09-11)
 ================
