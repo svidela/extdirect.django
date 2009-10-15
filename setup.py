@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-version = '0.3'
+version = '0.4dev'
 
 setup(name='extdirect.django',
       version=version,
