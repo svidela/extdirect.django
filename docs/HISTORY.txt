@@ -1,8 +1,8 @@
 CHANGES
 *******
 
-0.3dev (Unreleased)
-===================
+0.3 (2009-10-15)
+================
 
 * Bugfix: ExtDirectStore returns wrong 'total' parameter
 * Add a direct access to the descriptor API with an optional parameter
