@@ -1,22 +1,40 @@
 from django.core.serializers import serialize
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
+from metadata import meta_fields
 
 class ExtDirectStore(object):
     """
     Implement the server-side needed to load an Ext.data.DirectStore
     """
     
-    def __init__(self, model, extras=[], root='records', total='total', start='start', limit='limit', sort='sort', dir='dir'):
+    def __init__(self, model, extras=[], root='records', total='total', \
+                 start='start', limit='limit', sort='sort', dir='dir',\
+                 metadata=False, id_property='id', mappings={}, sort_info={}, custom_meta={}):
+        
         self.model = model        
         self.root = root
         self.total = total
-        self.extras = extras
+        self.extras = extras        
         
         # paramNames
         self.start = start
         self.limit = limit
         self.sort = sort
         self.dir = dir
+        
+        self.metadata = {}
+        if metadata:
+            fields = meta_fields(model, mappings)
+            self.metadata = {
+                'idProperty': id_property,
+                'root': root,
+                'totalProperty': total,
+                'fields': fields            
+            }
+            if sort_info:
+                self.metadata.update({'sortInfo': sort_info})
+                
+            self.metadata.update(custom_meta)        
         
     def query(self, qs=None, **kw):                
         paginate = False
@@ -72,4 +90,7 @@ class ExtDirectStore(object):
             'total' : self.total
         }
         res = serialize('extdirect', queryset, meta=meta, extras=self.extras, total=total)
+        if self.metadata:            
+            res['metaData'] = self.metadata
+            
         return res
