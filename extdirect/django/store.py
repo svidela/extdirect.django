@@ -8,12 +8,14 @@ class ExtDirectStore(object):
     """
     
     def __init__(self, model, extras=[], root='records', total='total', \
-                 start='start', limit='limit', sort='sort', dir='dir',\
-                 metadata=False, id_property='id', mappings={}, sort_info={}, custom_meta={}):
+                 success='success', start='start', limit='limit', sort='sort', \
+                 dir='dir', metadata=False, id_property='id', mappings={}, \
+                 sort_info={}, custom_meta={}):
         
         self.model = model        
         self.root = root
         self.total = total
+        self.success = success
         self.extras = extras        
         
         # paramNames
@@ -29,7 +31,8 @@ class ExtDirectStore(object):
                 'idProperty': id_property,
                 'root': root,
                 'totalProperty': total,
-                'fields': fields            
+                'successProperty': success,
+                'fields': fields                
             }
             if sort_info:
                 self.metadata.update({'sortInfo': sort_info})
@@ -87,10 +90,11 @@ class ExtDirectStore(object):
     def serialize(self, queryset, total=None):        
         meta = {
             'root': self.root,
-            'total' : self.total
-        }
-        res = serialize('extdirect', queryset, meta=meta, extras=self.extras, total=total)
+            'total' : self.total,
+            'success': self.success
+        }        
+        res = serialize('extdirect', queryset, meta=meta, extras=self.extras, total=total)        
         if self.metadata:            
-            res['metaData'] = self.metadata
-            
+            res['metaData'] = self.metadata        
+        
         return res

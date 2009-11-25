@@ -10,7 +10,8 @@ class Serializer(python.Serializer):
         self._current = None
         self.objects = {
             self.meta['root']: [],
-            self.meta['total']: total
+            self.meta['total']: total,
+            self.meta['success']: True
         }
 
     def end_serialization(self):
@@ -59,7 +60,7 @@ class Serializer(python.Serializer):
         
         self.local_fields = options.get("local")
         
-        self.meta = options.get('meta', dict(root='records', total='total'))
+        self.meta = options.get('meta', dict(root='records', total='total', success='success'))
         self.extras = options.get('extras', [])
         
         total = options.get("total", queryset.count())        
