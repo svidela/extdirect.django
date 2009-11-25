@@ -325,7 +325,7 @@ Let's see the simplest use case::
   >>> from extdirect.django.models import ExtDirectStoreModel
   >>> list = ExtDirectStore(ExtDirectStoreModel)
   >>> pprint(list.query()) #doctest: +NORMALIZE_WHITESPACE
-  {'records': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}], 'total': 2}
+  {'records': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}], 'success': True, 'total': 2}
   
 So a quick and almost complete example could be:
 
@@ -358,25 +358,25 @@ As we saw in the example above, you may want to pass a keyword arguments to the
 method `query` in order to filter your query::
 
   >>> pprint(list.query(id=1))
-  {'records': [{'id': 1, 'name': u'Homer'}], 'total': 1}
+  {'records': [{'id': 1, 'name': u'Homer'}], 'success': True, 'total': 1}
   
 You are able to change (or set at creation time) the keywords used by ExtDirectStore::
 
   >>> list.root = 'users'
   >>> list.total = 'result'
   >>> pprint(list.query())
-  {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
+  {'result': 2, 'success': True, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
   
 If you are using Paging, ExtDirectStore will take care::
 
   >>> pprint(list.query(start=0, limit=2))
-  {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
+  {'result': 2, 'success': True, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
 
   >>> pprint(list.query(start=0, limit=1))
-  {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}]}
+  {'result': 2, 'success': True, 'users': [{'id': 1, 'name': u'Homer'}]}
 
   >>> pprint(list.query(start=1, limit=1))
-  {'result': 2, 'users': [{'id': 2, 'name': u'Joe'}]}
+  {'result': 2, 'success': True, 'users': [{'id': 2, 'name': u'Joe'}]}
   
 Again, you are free to change the keywords `start` and `limit` to whatever you want to::
 
@@ -384,15 +384,15 @@ Again, you are free to change the keywords `start` and `limit` to whatever you w
   >>> list.limit = 'to'
   >>> kw = {'from':0, 'to':1}
   >>> pprint(list.query(**kw))
-  {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}]}
+  {'result': 2, 'success': True, 'users': [{'id': 1, 'name': u'Homer'}]}
   
 Sorting it's also included::
 
   >>> pprint(list.query(sort='name', dir='ASC'))
-  {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
+  {'result': 2, 'success': True, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
 
   >>> pprint(list.query(sort='name', dir='DESC'))
-  {'result': 2, 'users': [{'id': 2, 'name': u'Joe'}, {'id': 1, 'name': u'Homer'}]}
+  {'result': 2, 'success': True, 'users': [{'id': 2, 'name': u'Joe'}, {'id': 1, 'name': u'Homer'}]}
   
 And guess what...? You are able to change this keywords too::
 
@@ -400,10 +400,10 @@ And guess what...? You are able to change this keywords too::
   >>> list.dir = 'sort_order'
   
   >>> pprint(list.query(sort_field='name', sort_order='ASC'))
-  {'result': 2, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
+  {'result': 2, 'success': True, 'users': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}]}
 
   >>> pprint(list.query(sort_field='name', sort_order='DESC'))
-  {'result': 2, 'users': [{'id': 2, 'name': u'Joe'}, {'id': 1, 'name': u'Homer'}]}
+  {'result': 2, 'success': True, 'users': [{'id': 2, 'name': u'Joe'}, {'id': 1, 'name': u'Homer'}]}
   
 Finally, sometimes you will need to run complex queries. We have two options for that.
 First, you could pass or set, an `extras` parameter to the ExtDirectStore. This should be a list of
@@ -416,6 +416,7 @@ tuples like::
   >>> list.extras = extras
   >>> pprint(list.query()) #doctest: +NORMALIZE_WHITESPACE
   {'result': 2,
+   'success': True,
    'users': [{'id': 1,
               'name': u'Homer',
               'name_size': 5,
@@ -438,7 +439,7 @@ The second option to run complex queries it's very simple.::
 
   >>> qs = ExtDirectStoreModel.objects.exclude(id=2)
   >>> pprint(list.query(qs))
-  {'result': 1, 'users': [{'id': 1, 'name': u'Homer'}]}
+  {'result': 1, 'success': True, 'users': [{'id': 1, 'name': u'Homer'}]}
   
 Here, we just need to pass a valid queryset to the `query` function. Using this
 queryset, ExtDirectStore, will apply everything that we already saw
@@ -450,7 +451,7 @@ Finally, let's see what happen when you define ForeignKey in your models::
   >>> from extdirect.django.models import Model
   >>> ds = ExtDirectStore(Model)
   >>> pprint(ds.query())
-  {'records': [{'fk_model': 1, 'fk_model_id': 1, 'id': 1}], 'total': 1}
+  {'records': [{'fk_model': 1, 'fk_model_id': 1, 'id': 1}], 'success': True, 'total': 1}
   
 For each, foreign key field (`fk_model`), you will get two attributes with the same value:
  - fk_model
