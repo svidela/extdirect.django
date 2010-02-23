@@ -16,7 +16,8 @@ class ExtDirectStore(object):
         self.root = root
         self.total = total
         self.success = success
-        self.extras = extras        
+        self.extras = extras
+        self.id_property = id_property
         
         # paramNames
         self.start = start
@@ -78,7 +79,7 @@ class ExtDirectStore(object):
             total = paginator.count
             
             try:                
-                page = paginator.page(start + 1)
+                page = paginator.page(start / limit + 1)
             except (EmptyPage, InvalidPage):
                 #out of range, deliver last page of results.
                 page = paginator.page(paginator.num_pages)

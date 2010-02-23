@@ -4,6 +4,8 @@ CHANGES
 0.4 (unreleased)
 ================
 
+* Bugfix: Wrong page number when using paging.
+
 0.3 (2009-10-15)
 ================
 
