@@ -44,9 +44,9 @@ def meta_fields(model, mappings):
             if klass == 'DateField':
                 config['dateFormat'] = 'Y-m-d'
             if klass == 'TimeField':
-                config['dateFormat'] = 'HH:MM:ss'
+                config['dateFormat'] = 'H:i:s'
             if klass == 'DateTimeField':
-                config['dateFormat'] = 'Y-m-d HH:MM:ss'
+                config['dateFormat'] = 'Y-m-d H:i:s'
         except:
             #We should check for some method or something in case that the
             #model use a custom Field class.

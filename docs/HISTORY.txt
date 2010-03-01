@@ -5,6 +5,7 @@ CHANGES
 ================
 
 * Bugfix: Wrong page number when using paging.
+* Bugfix: Wrong dateFormat in generated metadata 
 
 0.3 (2009-10-15)
 ================
