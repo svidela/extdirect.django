@@ -1,3 +1,4 @@
+from crud import ExtDirectCRUD
 
 def remoting(provider, action=None, name=None, len=0, form_handler=False, \
              login_required=False, permission=None):
@@ -23,18 +24,15 @@ def polling(provider, login_required=False, permission=None):
     return decorator
 
 def crud(provider, action=None, login_required=False, permission=None):
+    """
+    Very simple class decorator, just initialize the object. All the magic it's in the
+    __init__ method of BaseExtDirectCRUD. So, you must ensure that your class
+    inherit from ExtDirectCRUD.
     """    
-    """    
-    def decorator(klass, action):
-        i = klass()
+    def decorator(klass, action):        
+        action = action or klass.__name__    
+        i = klass(provider, action, login_required, permission)
         
-        action = action or klass.__name__
-        
-        provider.register(i.create, action, 'create', 1, False, login_required, permission)
-        provider.register(i.read, action, 'read', 1, False, login_required, permission)
-        provider.register(i.update, action, 'update', 2, False, login_required, permission)
-        provider.register(i.destroy, action, 'destroy', 1, False, login_required, permission)
-        
-        return klass
+        return klass        
         
     return lambda klass: decorator(klass, action)
