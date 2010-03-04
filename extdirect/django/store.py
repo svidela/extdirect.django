@@ -40,7 +40,7 @@ class ExtDirectStore(object):
                 
             self.metadata.update(custom_meta)        
         
-    def query(self, qs=None, **kw):                
+    def query(self, qs=None, metadata=True, **kw):                
         paginate = False
         total = None
         order = False
@@ -86,16 +86,16 @@ class ExtDirectStore(object):
             
             objects = page.object_list
             
-        return self.serialize(objects, total)
+        return self.serialize(objects, metadata, total)
         
-    def serialize(self, queryset, total=None):        
+    def serialize(self, queryset, metadata=True, total=None):        
         meta = {
             'root': self.root,
             'total' : self.total,
             'success': self.success
         }        
         res = serialize('extdirect', queryset, meta=meta, extras=self.extras, total=total)        
-        if self.metadata:            
+        if metadata and self.metadata:            
             res['metaData'] = self.metadata        
         
         return res

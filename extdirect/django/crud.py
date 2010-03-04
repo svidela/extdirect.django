@@ -167,7 +167,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
         if success:
             transaction.commit()    
             self.post_create(ids)
-            res = self.store.query(self.model.objects.filter(pk__in=ids))            
+            res = self.store.query(self.model.objects.filter(pk__in=ids), metadata=False)            
             res['message'] = 'Records created'
             return res
         else:
@@ -219,7 +219,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
         if success:
             transaction.commit()    
             self.post_update(ids)
-            res = self.store.query(self.model.objects.filter(pk__in=ids))
+            res = self.store.query(self.model.objects.filter(pk__in=ids), metadata=False)
             res['message'] = "Records updated"
             return res
         else:
