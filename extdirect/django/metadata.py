@@ -22,7 +22,7 @@ DJANGO_EXT_MAP = {
     'TimeField'                     : 'date',
     'URLField'                      : 'string',
     'XMLField'                      : 'string',
-    'ForeignKey'                    : 'int',
+    'ForeignKey'                    : 'string',
     #'ManyToMany'                   : ????
 }
 
@@ -60,6 +60,7 @@ def meta_fields(model, mappings):
         if klass == 'ForeignKey':
             config_cpy = config.copy()
             config_cpy['name'] = config['name'] + '_id'
+            config_cpy['type'] = 'int'
             result.append(config_cpy)
             
     return result

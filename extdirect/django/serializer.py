@@ -37,17 +37,18 @@ class Serializer(python.Serializer):
         related = getattr(obj, field.name)
         if related is not None:
             if field.rel.field_name == related._meta.pk.name:
-                # Related to remote object via primary key
-                related = related._get_pk_val()
+                # Related to remote object via primary key                
+                self._current[field.name+'_id'] = smart_unicode(related._get_pk_val(), strings_only=True)
+                self._current[field.name] = smart_unicode(related, strings_only=True)                
             else:
                 # Related to remote object via other field
                 related = getattr(related, field.rel.field_name)
-        self._current[field.name] = self._current[field.name+'_id'] = smart_unicode(related, strings_only=True)         
+                self._current[field.name] = self._current[field.name+'_id'] = smart_unicode(getattr(related, field.rel.field_name), strings_only=True)        
 
     def handle_m2m_field(self, obj, field):
-        if field.creates_table:
-            self._current[field.name] = self._current[field.name+'_ids'] = [smart_unicode(related._get_pk_val(), strings_only=True)
-                               for related in getattr(obj, field.name).iterator()]        
+        if field.creates_table:            
+            self._current[field.name+'_ids'] = [smart_unicode(related._get_pk_val(), strings_only=True)
+                                                for related in getattr(obj, field.name).iterator()]
     
     def serialize(self, queryset, **options):
         """

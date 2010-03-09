@@ -205,7 +205,7 @@ Let's check the reponse::
 If you use `fileUpload`_ in your ExtJS form, the files will be available in
 `request.FILES`, just as Django handles the `File Uploads`_.
 
-.. _`fileUpload`: http://www.extjs.com/deploy/dev/docs/?class=Ext.form.BasicForm#Ext.form.BasicForm-fileUpload
+.. _`fileUpload`: http://www.extjs.com/deploy/dev/docs/?class=Ext.form.BasicForm
 .. _`File Uploads`: http://docs.djangoproject.com/en/dev/topics/http/file-uploads/
 
 Now, we are going to see what happen with exceptions. Following the Ext.Direct specification
@@ -451,11 +451,11 @@ Finally, let's see what happen when you define ForeignKey in your models::
   >>> from extdirect.django.models import Model
   >>> ds = ExtDirectStore(Model)
   >>> pprint(ds.query())
-  {'records': [{'fk_model': 1, 'fk_model_id': 1, 'id': 1}], 'success': True, 'total': 1}
+  {'records': [{'fk_model': u'FKModel object', 'fk_model_id': 1, 'id': 1}], 'success': True, 'total': 1}
   
-For each, foreign key field (`fk_model`), you will get two attributes with the same value:
- - fk_model
- - fk_model_id
+For each, foreign key field (`fk_model`), you will get two attributes:
+ - fk_model: The result of smart_unicode function for the ForeignKey model.
+ - fk_model_id: The real foreign key value.
 
 Using the ExtDirectCRUD helper class
 ------------------------------------
@@ -477,7 +477,7 @@ Let's see how this works::
   >>> from extdirect.django.decorators import crud
   >>> @crud(tests.remote_provider)
   ... class ModelCRUD(ExtDirectCRUD):
-  ...     model = ExtDirectStoreModel
+  ...     model = ExtDirectStoreModel  
   ...
   >>>
   

@@ -6,8 +6,6 @@ from django.shortcuts import get_object_or_404, render_to_response
 
 from django.utils import simplejson
 
-ACTIONS = ('CREATE', 'READ', 'UPDATE', 'DESTROY')
-
 class BaseExtDirectCRUD(object):
     """
     Base class for CRUD actions.
@@ -45,6 +43,10 @@ class BaseExtDirectCRUD(object):
     
     def direct_store(self):
         return ExtDirectStore(self.model, metadata=True)
+        
+    def query(self):
+        #It must return `None` or a valid Django Queryset
+        return None
     
     #All the "extract_(action)_data" will depend on how you registered each method.
     def extract_create_data(self, request, sid):
@@ -79,8 +81,8 @@ class BaseExtDirectCRUD(object):
         #id='ext-record-#'
         data.pop("id", "")
     
-        c = None
-        form = self.form(data=data)
+        c = None        
+        form = self.form(data=self._single_process(data))
         if form.is_valid():
             c = form.save()                
             self.post_single_create(c)
@@ -105,8 +107,8 @@ class BaseExtDirectCRUD(object):
         id = data.pop("id")        
         obj = self.model.objects.get(pk=id)        
     
-        all_fields = serialize('python', [obj])[0]['fields']
-        all_fields.update(data)
+        all_fields = serialize('python', [obj])[0]['fields']        
+        all_fields.update(self._single_process(data))
 
         form = self.form(all_fields, instance=obj)
         if form.is_valid():
@@ -115,6 +117,15 @@ class BaseExtDirectCRUD(object):
             return obj.id
         else:
             return 0
+        
+    # Process of data in order to fix the foreign keys according to how
+    # the `extdirect` serializer handles them.
+    # {'fk_model': 'FKModel', 'fk_model_id':1} --> {'fk_model':1, 'fk_model_id': 1}
+    def _single_process(self, data):
+        for field in data.keys():
+            if field[-3:] == '_id' and isinstance(data[field], int) and not isinstance(data[field[:-3]], int):
+                data[field[:-3]] = data[field]
+        return data        
 
     def pre_destroy(self, data):
         return True, ""
@@ -179,7 +190,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
         extdirect_data = self.extract_read_data(request)
         ok, msg = self.pre_read(extdirect_data)        
         if ok:           
-            return self.store.query(**extdirect_data)
+            return self.store.query(qs=self.query(), **extdirect_data)
         else:
             return self.failure(msg)
     
