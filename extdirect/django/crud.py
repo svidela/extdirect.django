@@ -44,7 +44,7 @@ class BaseExtDirectCRUD(object):
     def direct_store(self):
         return ExtDirectStore(self.model, metadata=True)
         
-    def query(self):
+    def query(self, **kw):
         #It must return `None` or a valid Django Queryset
         return None
     
@@ -190,7 +190,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
         extdirect_data = self.extract_read_data(request)
         ok, msg = self.pre_read(extdirect_data)        
         if ok:           
-            return self.store.query(qs=self.query(), **extdirect_data)
+            return self.store.query(qs=self.query(**extdirect_data), **extdirect_data)
         else:
             return self.failure(msg)
     
