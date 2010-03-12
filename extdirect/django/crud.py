@@ -3,8 +3,21 @@ from django.forms.models import modelform_factory
 from django.db import transaction
 from django.core.serializers import serialize
 from django.shortcuts import get_object_or_404, render_to_response
+from django.utils.encoding import force_unicode
 
 from django.utils import simplejson
+
+def format_form_errors(errors):
+    """
+    Convert the ErrorDict and ErrorList Django objects
+    to dict and list standard python objects.
+    Otherwise we can't serialize them to JSON.
+    """
+    err = {}
+    for k, v in errors.items():
+        err[k] = [force_unicode(e) for e in v]
+        
+    return err
 
 class BaseExtDirectCRUD(object):
     """
@@ -14,7 +27,17 @@ class BaseExtDirectCRUD(object):
     re-implement in your own class.
     """
     model = None
-    form = None    
+    form = None
+    
+    show_form_validation = False
+    
+    create_success_msg = "Records created"
+    create_failure_msg = "There was an error while trying to save some of the records"
+    
+    update_success_msg = "Records updated"
+    update_failure_msg = "There was an error while trying to save some of the records"
+    
+    destroy_success_msg = "Objects deleted"    
     
     def __init__(self, provider, action, login_required, permission):
         self.store = self.direct_store()
@@ -86,9 +109,9 @@ class BaseExtDirectCRUD(object):
         if form.is_valid():
             c = form.save()                
             self.post_single_create(c)
-            return c.id        
+            return c.id, ""
         else:
-            return 0
+            return 0, form.errors            
         
     def pre_read(self, data):
         return True, ""
@@ -114,9 +137,9 @@ class BaseExtDirectCRUD(object):
         if form.is_valid():
             obj = form.save()        
             self.post_single_update(obj)
-            return obj.id
+            return obj.id, ""
         else:
-            return 0
+            return 0, form.errors
         
     # Process of data in order to fix the foreign keys according to how
     # the `extdirect` serializer handles them.
@@ -159,17 +182,17 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
                     
         ids = []
         success = True
-        
+        errors = {}
         if isinstance(extdirect_data, list):
             for data in extdirect_data:
-                id = self._single_create(data)
+                id, errors = self._single_create(data)
                 if id:
                     ids.append(id)
                 else:            
                     success = False
                     break
         else:
-            id = self._single_create(extdirect_data)
+            id, errors = self._single_create(extdirect_data)            
             if id:
                 ids.append(id)
             else:
@@ -179,11 +202,16 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
             transaction.commit()    
             self.post_create(ids)
             res = self.store.query(self.model.objects.filter(pk__in=ids), metadata=False)            
-            res['message'] = 'Records created'
+            res['message'] = self.create_success_msg
             return res
         else:
             transaction.savepoint_rollback(sid)
-            return self.failure("There was an error while trying to save some of the records.")
+            if self.show_form_validation:
+                err = format_form_errors(errors)                
+            else:
+                err = self.create_failure_msg
+                
+            return self.failure(err)
         
     #READ        
     def read(self, request):
@@ -208,11 +236,11 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
         ids = []
         success = True
         records = extdirect_data                
-        
+        errors = {}
         if isinstance(records, list):
             #batch update
             for data in records:
-                id = self._single_update(data)
+                id, errors = self._single_update(data)
                 if id:
                     ids.append(id)
                 else:
@@ -221,7 +249,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
 
         else:
             #single update
-            id = self._single_update(records)
+            id, errors = self._single_update(records)
             if id:
                 ids.append(id)
             else:
@@ -231,11 +259,16 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
             transaction.commit()    
             self.post_update(ids)
             res = self.store.query(self.model.objects.filter(pk__in=ids), metadata=False)
-            res['message'] = "Records updated"
+            res['message'] = self.update_success_msg
             return res
         else:
             transaction.savepoint_rollback(sid)
-            return self.failure("There was an error while trying to save some of the records.")
+            if self.show_form_validation:
+                err = format_form_errors(errors)                
+            else:
+                err = self.update_failure_msg
+                
+            return self.failure(err)
     
     #DESTROY        
     def destroy(self, request):
@@ -255,5 +288,5 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
             c.delete()        
             self.post_destroy(i)
         
-        return {self.store.success:True, 'message':"Objects deleted"}
+        return {self.store.success: True, 'message': self.destroy_success_msg}
     

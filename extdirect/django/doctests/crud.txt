@@ -1,0 +1,164 @@
+We are going to test ExtDirectCRUD helper class. First a few import needed::
+  
+  >>> from django.test.client import Client
+  >>> client = Client()
+  >>> from django.utils import simplejson
+  >>> from extdirect.django import tests
+  >>> from extdirect.django import ExtDirectStore, ExtDirectCRUD, crud
+  >>> from extdirect.django.models import ExtDirectStoreModel
+  
+Now, let's declare our CRUD class. What we want to test here, it's how you
+could overrides the defaults::
+  
+  >>> @crud(tests.remote_provider)
+  ... class ModelCRUD(ExtDirectCRUD):
+  ...     model = ExtDirectStoreModel
+  ...
+  ...     #You could overrides how each CRUD action it's registered
+  ...     def reg_create(self, provider, action, login_required, permission): 
+  ...         provider.register(self.create, action, 'create', 1, True, login_required, permission)
+  ...
+  ...     def reg_read(self, provider, action, login_required, permission): 
+  ...         provider.register(self.read, action, 'list', 1, False, login_required, permission)
+  ...
+  ...     def reg_update(self, provider, action, login_required, permission): 
+  ...         provider.register(self.update, action, 'edit', 2, True, login_required, permission)
+  ...
+  ...     def reg_destroy(self, provider, action, login_required, permission): 
+  ...         provider.register(self.destroy, action, 'delete', 1, False, login_required, permission)  
+  ...
+  ...     #You may want to customize the queryset that ExtDirectStore will serialize
+  ...     def query(self, **kw):
+  ...         return ExtDirectStoreModel.objects.exclude(id=2)
+  ...
+  ...     #You may want to change the initialization of the ExtDirectStore helper
+  ...     def direct_store(self):
+  ...       extras = [
+  ...         ('name_upper', lambda obj: obj.name.upper())
+  ...       ]
+  ...       return ExtDirectStore(self.model, extras)
+  ...
+  >>>
+  
+  >>> from pprint import pprint
+  >>> pprint(tests.remote_provider._config) #doctest: +NORMALIZE_WHITESPACE
+  {'actions': {'ModelCRUD': [{'formHandler': True, 'len': 2, 'name': 'edit'},
+                            {'formHandler': True, 'len': 1, 'name': 'create'},
+                            {'formHandler': False, 'len': 1, 'name': 'list'},
+                            {'formHandler': False, 'len': 1, 'name': 'delete'}]},
+  'namespace': 'django',
+  'type': 'remoting',
+  'url': '/remoting/router/'}
+  
+  >>> rpc = simplejson.dumps({'action': 'ModelCRUD',
+  ...                         'tid': 1,
+  ...                         'method': 'list',
+  ...                         'data':[{}],
+  ...                         'type':'rpc'})
+  >>> response = client.post('/remoting/router/', rpc, 'application/json')
+
+Let's check the reponse::
+  
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  {u'action': u'ModelCRUD',
+   u'method': u'list',
+   u'result': {u'records': [{u'id': 1,
+                             u'name': u'Homer',
+                             u'name_upper': u'HOMER'}],
+               u'success': True,
+               u'total': 1},
+   u'tid': 1,
+   u'type': u'rpc'}
+   
+Validation
+----------
+
+Let's see how the validation works::
+
+  >>> rpc = simplejson.dumps({'action': 'ModelCRUD',
+  ...                         'tid': 1,
+  ...                         'method': 'create',
+  ...                         'data':[{'name': ''}],
+  ...                         'type':'rpc'})
+  >>> response = client.post('/remoting/router/', rpc, 'application/json')
+  
+As we sent an empty name, `extdirect.django` will validate the values using `Django Forms`_
+
+.. _`Django Forms`: http://docs.djangoproject.com/en/dev/ref/forms/
+
+and it should return an error message without adding any record::
+  
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  {u'action': u'ModelCRUD',
+   u'method': u'create',
+   u'result': {u'message': u'There was an error while trying to save some of the records',
+               u'records': [],
+               u'success': False,
+               u'total': 0},
+   u'tid': 1,
+   u'type': u'rpc'}
+
+By default, it will return a generic error message (that you could overwrite) but you
+could also would like to get the errors messages details. To do that, all we need
+it's to set the class attribute `show_form_validation` to `True`::
+
+  >>> @crud(tests.remote_provider)
+  ... class ModelCRUD2(ExtDirectCRUD):
+  ...     model = ExtDirectStoreModel
+  ...     show_form_validation = True
+  ...
+
+And let's see what happen if we send the same request one more time.
+The only thing we need to change it's the action name (ModelCRUD2)::
+
+  >>> rpc = simplejson.dumps({'action': 'ModelCRUD2',
+  ...                         'tid': 1,
+  ...                         'method': 'create',
+  ...                         'data':[{'name': ''}],
+  ...                         'type':'rpc'})
+  >>> response = client.post('/remoting/router/', rpc, 'application/json')  
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  {u'action': u'ModelCRUD2',
+   u'method': u'create',
+   u'result': {u'message': {u'name': [u'This field is required.']},
+               u'records': [],
+               u'success': False,
+               u'total': 0},
+   u'tid': 1,
+   u'type': u'rpc'}
+
+The same it's true for the `update` action. Let's see that::
+
+  >>> rpc = simplejson.dumps({'action': 'ModelCRUD',
+  ...                         'tid': 1,
+  ...                         'method': 'edit',
+  ...                         'data':[1, {'id': 1, 'name': ''}],
+  ...                         'type':'rpc'})
+  >>> response = client.post('/remoting/router/', rpc, 'application/json') 
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  {u'action': u'ModelCRUD',
+   u'method': u'edit',
+   u'result': {u'message': u'There was an error while trying to save some of the records',
+               u'records': [],
+               u'success': False,
+               u'total': 0},
+   u'tid': 1,
+   u'type': u'rpc'}
+   
+And let's see what happen with our ModelCRUD2::
+
+  >>> rpc = simplejson.dumps({'action': 'ModelCRUD2',
+  ...                         'tid': 1,
+  ...                         'method': 'update',
+  ...                         'data':[1, {'id': 1, 'name': ''}],
+  ...                         'type':'rpc'})
+  >>> response = client.post('/remoting/router/', rpc, 'application/json') 
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  {u'action': u'ModelCRUD2',
+   u'method': u'update',
+   u'result': {u'message': {u'name': [u'This field is required.']},
+               u'records': [],
+               u'success': False,
+               u'total': 0},
+   u'tid': 1,
+   u'type': u'rpc'}
