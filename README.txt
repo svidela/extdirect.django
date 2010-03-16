@@ -503,8 +503,9 @@ And let's check the reponse::
                                           u'name': u'name',
                                           u'type': u'string'}],
                              u'idProperty': u'id',
+                             u'messageProperty': u'message',
                              u'root': u'records',
-                             u'successProperty': u'success',
+                             u'successProperty': u'success',                             
                              u'totalProperty': u'total'},
                u'records': [{u'id': 1, u'name': u'Homer'},
                             {u'id': 2, u'name': u'Joe'}],
@@ -521,7 +522,7 @@ Now we are going to test the `create` action::
   >>> rpc = simplejson.dumps({'action': 'ModelCRUD',
   ...                         'tid': 1,
   ...                         'method': 'create',
-  ...                         'data':[{'name': 'Vincent'}],
+  ...                         'data':[{'records': [{'name': 'Vincent'}]}],
   ...                         'type':'rpc'})
   >>> response = client.post('/remoting/router/', rpc, 'application/json')
   
@@ -542,7 +543,7 @@ Create in batch it's also possible::
   >>> rpc = simplejson.dumps({'action': 'ModelCRUD',
   ...                         'tid': 1,
   ...                         'method': 'create',
-  ...                         'data':[[{'name': 'Joseph'}, {'name': 'Brad'}]],
+  ...                         'data':[{'records':[{'name': 'Joseph'}, {'name': 'Brad'}]}],
   ...                         'type':'rpc'})
   >>> response = client.post('/remoting/router/', rpc, 'application/json')
   
@@ -579,6 +580,7 @@ And let's check the reponse::
                                           u'name': u'name',
                                           u'type': u'string'}],
                              u'idProperty': u'id',
+                             u'messageProperty': u'message',
                              u'root': u'records',
                              u'successProperty': u'success',
                              u'totalProperty': u'total'},
@@ -614,6 +616,7 @@ So, we should only get one record::
                                           u'name': u'name',
                                           u'type': u'string'}],
                              u'idProperty': u'id',
+                             u'messageProperty': u'message',
                              u'root': u'records',
                              u'successProperty': u'success',
                              u'totalProperty': u'total'},
@@ -628,7 +631,7 @@ And now, let's change it's `name` attribute::
   >>> rpc = simplejson.dumps({'action': 'ModelCRUD',
   ...                         'tid': 1,
   ...                         'method': 'update',
-  ...                         'data':[5, {'id': 5, 'name': 'Butch'}],
+  ...                         'data':[{'records': {'id': 5, 'name': 'Butch'}}],
   ...                         'type':'rpc'})
   >>> response = client.post('/remoting/router/', rpc, 'application/json')
   
@@ -665,6 +668,7 @@ We should get one record with the name `Butch` instead of `Brad`::
                                           u'name': u'name',
                                           u'type': u'string'}],
                              u'idProperty': u'id',
+                             u'messageProperty': u'message',
                              u'root': u'records',
                              u'successProperty': u'success',
                              u'totalProperty': u'total'},
@@ -679,7 +683,7 @@ Finally, let's try the `destroy` action::
   >>> rpc = simplejson.dumps({'action': 'ModelCRUD',
   ...                         'tid': 1,
   ...                         'method': 'destroy',
-  ...                         'data':[5],
+  ...                         'data':[{'records':[5]}],
   ...                         'type':'rpc'})
   >>> response = client.post('/remoting/router/', rpc, 'application/json')
 
@@ -688,7 +692,7 @@ Let's see what we get::
   >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
   {u'action': u'ModelCRUD',
    u'method': u'destroy',
-   u'result': {u'message': u'Objects deleted', u'success': True},
+   u'result': {u'message': u'Objects deleted', u'records': [], u'success': True},
    u'tid': 1,
    u'type': u'rpc'}
 
@@ -697,13 +701,13 @@ Destroy in batch it's also possible::
   >>> rpc = simplejson.dumps({'action': 'ModelCRUD',
   ...                         'tid': 1,
   ...                         'method': 'destroy',
-  ...                         'data':[[3,4]],
+  ...                         'data':[{'records':[3,4]}],
   ...                         'type':'rpc'})
   >>> response = client.post('/remoting/router/', rpc, 'application/json')
   >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
   {u'action': u'ModelCRUD',
    u'method': u'destroy',
-   u'result': {u'message': u'Objects deleted', u'success': True},
+   u'result': {u'message': u'Objects deleted', u'records': [], u'success': True},
    u'tid': 1,
    u'type': u'rpc'}
 
@@ -728,6 +732,7 @@ Let's check the reponse::
                                           u'name': u'name',
                                           u'type': u'string'}],
                              u'idProperty': u'id',
+                             u'messageProperty': u'message',
                              u'root': u'records',
                              u'successProperty': u'success',
                              u'totalProperty': u'total'},

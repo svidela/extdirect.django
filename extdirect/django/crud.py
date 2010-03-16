@@ -59,7 +59,7 @@ class BaseExtDirectCRUD(object):
         provider.register(self.read, action, 'read', 1, False, login_required, permission)
         
     def reg_update(self, provider, action, login_required, permission):
-        provider.register(self.update, action, 'update', 2, False, login_required, permission)
+        provider.register(self.update, action, 'update', 1, False, login_required, permission)
 
     def reg_destroy(self, provider, action, login_required, permission):
         provider.register(self.destroy, action, 'destroy', 1, False, login_required, permission)
@@ -75,7 +75,7 @@ class BaseExtDirectCRUD(object):
     def extract_create_data(self, request, sid):
         #It must return a dict object or a list of dicts with the values ready
         #to create the new instance or instances.
-        return request.extdirect_post_data[0]
+        return request.extdirect_post_data[0][self.store.root]
     
     def extract_read_data(self, request):
         #It must return a dict object ready to be passed
@@ -84,12 +84,12 @@ class BaseExtDirectCRUD(object):
     
     def extract_update_data(self, request, sid):
         #It must return a dict object or a list of dicts with the values ready
-        #to update the instance or instances.
-        return request.extdirect_post_data[1]
+        #to update the instance or instances.        
+        return request.extdirect_post_data[0][self.store.root]
     
     def extract_destroy_data(self, request):
         #It must return the id or list of id's to be deleted.
-        return request.extdirect_post_data[0]
+        return request.extdirect_post_data[0][self.store.root]
     
     def pre_create(self, data):
         return True, ""
@@ -157,7 +157,7 @@ class BaseExtDirectCRUD(object):
         pass
     
     def failure(self, msg):
-        return {self.store.success: False, self.store.root: [], self.store.total: 0, 'message': msg}
+        return {self.store.success: False, self.store.root: [], self.store.total: 0, self.store.message: msg}
             
 class ExtDirectCRUD(BaseExtDirectCRUD):
     """
@@ -202,7 +202,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
             transaction.commit()    
             self.post_create(ids)
             res = self.store.query(self.model.objects.filter(pk__in=ids), metadata=False)            
-            res['message'] = self.create_success_msg
+            res[self.store.message] = self.create_success_msg
             return res
         else:
             transaction.savepoint_rollback(sid)
@@ -259,7 +259,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
             transaction.commit()    
             self.post_update(ids)
             res = self.store.query(self.model.objects.filter(pk__in=ids), metadata=False)
-            res['message'] = self.update_success_msg
+            res[self.store.message] = self.update_success_msg
             return res
         else:
             transaction.savepoint_rollback(sid)
@@ -288,5 +288,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
             c.delete()        
             self.post_destroy(i)
         
-        return {self.store.success: True, 'message': self.destroy_success_msg}
+        return {self.store.success: True,
+                self.store.message: self.destroy_success_msg,
+                self.store.root: []}
     

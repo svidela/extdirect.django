@@ -22,7 +22,7 @@ could overrides the defaults::
   ...         provider.register(self.read, action, 'list', 1, False, login_required, permission)
   ...
   ...     def reg_update(self, provider, action, login_required, permission): 
-  ...         provider.register(self.update, action, 'edit', 2, True, login_required, permission)
+  ...         provider.register(self.update, action, 'edit', 1, True, login_required, permission)
   ...
   ...     def reg_destroy(self, provider, action, login_required, permission): 
   ...         provider.register(self.destroy, action, 'delete', 1, False, login_required, permission)  
@@ -42,7 +42,7 @@ could overrides the defaults::
   
   >>> from pprint import pprint
   >>> pprint(tests.remote_provider._config) #doctest: +NORMALIZE_WHITESPACE
-  {'actions': {'ModelCRUD': [{'formHandler': True, 'len': 2, 'name': 'edit'},
+  {'actions': {'ModelCRUD': [{'formHandler': True, 'len': 1, 'name': 'edit'},
                             {'formHandler': True, 'len': 1, 'name': 'create'},
                             {'formHandler': False, 'len': 1, 'name': 'list'},
                             {'formHandler': False, 'len': 1, 'name': 'delete'}]},
@@ -78,7 +78,7 @@ Let's see how the validation works::
   >>> rpc = simplejson.dumps({'action': 'ModelCRUD',
   ...                         'tid': 1,
   ...                         'method': 'create',
-  ...                         'data':[{'name': ''}],
+  ...                         'data':[{'records':[{'name': ''}]}],
   ...                         'type':'rpc'})
   >>> response = client.post('/remoting/router/', rpc, 'application/json')
   
@@ -114,7 +114,7 @@ The only thing we need to change it's the action name (ModelCRUD2)::
   >>> rpc = simplejson.dumps({'action': 'ModelCRUD2',
   ...                         'tid': 1,
   ...                         'method': 'create',
-  ...                         'data':[{'name': ''}],
+  ...                         'data':[{'records':[{'name': ''}]}],
   ...                         'type':'rpc'})
   >>> response = client.post('/remoting/router/', rpc, 'application/json')  
   >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
@@ -132,7 +132,7 @@ The same it's true for the `update` action. Let's see that::
   >>> rpc = simplejson.dumps({'action': 'ModelCRUD',
   ...                         'tid': 1,
   ...                         'method': 'edit',
-  ...                         'data':[1, {'id': 1, 'name': ''}],
+  ...                         'data':[{'records': [{'id': 1, 'name': ''}]}],
   ...                         'type':'rpc'})
   >>> response = client.post('/remoting/router/', rpc, 'application/json') 
   >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
@@ -150,7 +150,7 @@ And let's see what happen with our ModelCRUD2::
   >>> rpc = simplejson.dumps({'action': 'ModelCRUD2',
   ...                         'tid': 1,
   ...                         'method': 'update',
-  ...                         'data':[1, {'id': 1, 'name': ''}],
+  ...                         'data':[{'records':[{'id': 1, 'name': ''}]}],
   ...                         'type':'rpc'})
   >>> response = client.post('/remoting/router/', rpc, 'application/json') 
   >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE

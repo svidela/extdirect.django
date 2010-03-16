@@ -8,9 +8,9 @@ class ExtDirectStore(object):
     """
     
     def __init__(self, model, extras=[], root='records', total='total', \
-                 success='success', start='start', limit='limit', sort='sort', \
-                 dir='dir', metadata=False, id_property='id', mappings={}, \
-                 sort_info={}, custom_meta={}):
+                 success='success', message='message', start='start', limit='limit', \
+                 sort='sort', dir='dir', metadata=False, id_property='id', \
+                 mappings={}, sort_info={}, custom_meta={}):
         
         self.model = model        
         self.root = root
@@ -18,6 +18,7 @@ class ExtDirectStore(object):
         self.success = success
         self.extras = extras
         self.id_property = id_property
+        self.message = message
         
         # paramNames
         self.start = start
@@ -33,7 +34,8 @@ class ExtDirectStore(object):
                 'root': root,
                 'totalProperty': total,
                 'successProperty': success,
-                'fields': fields                
+                'fields': fields,
+                'messageProperty': message
             }
             if sort_info:
                 self.metadata.update({'sortInfo': sort_info})
