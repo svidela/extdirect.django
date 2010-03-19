@@ -1,0 +1,19 @@
+Test coverage (18-03-2010)
+--------------------------
+Coverage was calculated using: http://nedbatchelder.com/code/coverage
+
+Name                                               Stmts   Exec  Cover
+----------------------------------------------------------------------
+src/extdirect.django/extdirect/__init__                5      2    40%
+src/extdirect.django/extdirect/django/__init__         4      4   100%
+src/extdirect.django/extdirect/django/crud           178    166    93%
+src/extdirect.django/extdirect/django/decorators      17     17   100%
+src/extdirect.django/extdirect/django/metadata        34     32    94%
+src/extdirect.django/extdirect/django/models          20     20   100%
+src/extdirect.django/extdirect/django/providers      159    134    84%
+src/extdirect.django/extdirect/django/serializer      62     54    87%
+src/extdirect.django/extdirect/django/store           61     58    95%
+src/extdirect.django/extdirect/django/test_urls        3      3   100%
+src/extdirect.django/extdirect/django/tests           25     25   100%
+----------------------------------------------------------------------
+TOTAL                                                568    515    90%
