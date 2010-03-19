@@ -40,5 +40,12 @@ def suite():
         tearDown=tearDown,
         globs=globs))
     
+    suite.addTest(doctest.DocFileSuite(
+        './doctests/metadata.txt',
+        optionflags=optionflags,
+        setUp=setUp,
+        tearDown=tearDown,
+        globs=globs))
+    
     return suite
 

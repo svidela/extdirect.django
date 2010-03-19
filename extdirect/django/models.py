@@ -16,4 +16,30 @@ class Model(models.Model):
 class ExtDirectStoreModel(models.Model):
     #We use this class only for testing purpose
     name = models.CharField(verbose_name="name", max_length=35)
+
+
+#We use this model to test the metadata generator module
+class MetaModel(models.Model):
     
+    name = models.TextField(verbose_name="name", max_length=35)
+    
+    nickname = models.TextField(verbose_name="nickname", max_length=35, blank=True, default="nick")
+    
+    age = models.IntegerField(verbose_name="age")
+    
+    creation_date = models.DateField(verbose_name="Creation")
+
+    
+    fk_model = models.ForeignKey(FKModel, verbose_name="fk")
+
+class HandField(models.Field):
+
+    description = "A hand of cards (bridge style)"
+
+    def __init__(self, *args, **kwargs):
+        kwargs['max_length'] = 104
+        super(HandField, self).__init__(*args, **kwargs)
+        
+class MetaModelCustomField(models.Model):
+    
+    hand = HandField()

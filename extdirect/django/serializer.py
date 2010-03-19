@@ -61,6 +61,8 @@ class Serializer(python.Serializer):
         
         self.local_fields = options.get("local")
         
+        self.exclude_fields = options.get("exclude_fields")
+        
         self.meta = options.get('meta', dict(root='records', total='total', success='success'))
         self.extras = options.get('extras', [])
         
@@ -72,7 +74,8 @@ class Serializer(python.Serializer):
                 fields = obj._meta.local_fields
             else:
                 fields = obj._meta.fields
-                
+            
+            fields = [f for f in fields if f.name not in self.exclude_fields]    
             self.start_object(obj)
             for field in fields:
                 if field.serialize:

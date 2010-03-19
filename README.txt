@@ -446,6 +446,56 @@ queryset, ExtDirectStore, will apply everything that we already saw
 (filter, paging, sorting). You are able to create a complex queryset using
 all of the Django ORM features and then pass it to the method `query`.
 
+By default, ExtDirectStore doesn't generate the metadata for your
+Ext.data.JsonReader, but we could activate that option very easy at creation time::
+
+  >>> list = ExtDirectStore(ExtDirectStoreModel, metadata=True)
+  >>> pprint(list.query())
+  {'metaData': {'fields': [{'allowBlank': True, 'name': 'id', 'type': 'int'},
+                           {'allowBlank': False, 'name': 'name', 'type': 'string'}],
+                'idProperty': 'id',
+                'messageProperty': 'message',
+                'root': 'records',
+                'successProperty': 'success',
+                'totalProperty': 'total'},
+   'records': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}],
+   'success': True,
+   'total': 2}
+  
+If you are going to use the `extras` option that we saw above, you should give
+the metadata for those "extra fields"::
+
+  >>> extra_meta = [{'allowBlank': False, 'name': 'name_size', 'type': 'int'}]
+  >>> extras = [('name_size', name_size)]
+  >>> list = ExtDirectStore(ExtDirectStoreModel, extras=extras, metadata=True, extra_fields=extra_meta)
+  >>> pprint(list.query())
+  {'metaData': {'fields': [{'allowBlank': True, 'name': 'id', 'type': 'int'},
+                           {'allowBlank': False, 'name': 'name', 'type': 'string'},
+                           {'allowBlank': False, 'name': 'name_size', 'type': 'int'}],
+                'idProperty': 'id',
+                'messageProperty': 'message',
+                'root': 'records',
+                'successProperty': 'success',
+                'totalProperty': 'total'},
+   'records': [{'id': 1, 'name': u'Homer', 'name_size': 5}, {'id': 2, 'name': u'Joe', 'name_size': 3}],
+   'success': True,
+   'total': 2}
+   
+Some times you may want to exclude some fields. To do this, we could just give a
+list of field names at creation time::
+
+  >>> list = ExtDirectStore(ExtDirectStoreModel, metadata=True, exclude_fields=['name'])
+  >>> pprint(list.query())
+  {'metaData': {'fields': [{'allowBlank': True, 'name': 'id', 'type': 'int'}],
+                'idProperty': 'id',
+                'messageProperty': 'message',
+                'root': 'records',
+                'successProperty': 'success',
+                'totalProperty': 'total'},
+   'records': [{'id': 1}, {'id': 2}],
+   'success': True,
+   'total': 2}
+   
 Finally, let's see what happen when you define ForeignKey in your models::
 
   >>> from extdirect.django.models import Model

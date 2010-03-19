@@ -1,0 +1,80 @@
+Here we are going to test the metadata module. Let's start with a few imports::
+
+  >>> from pprint import pprint
+  >>> from extdirect.django.models import MetaModel, MetaModelCustomField
+  >>> from extdirect.django.metadata import meta_fields
+  
+Now, the default and simplest usage::
+
+  >>> pprint(meta_fields(MetaModel))
+  [{'allowBlank': True, 'name': 'id', 'type': 'int'},
+   {'allowBlank': False, 'name': 'name', 'type': 'string'},
+   {'allowBlank': True, 'defaultValue': 'nick', 'name': 'nickname', 'type': 'string'},
+   {'allowBlank': False, 'name': 'age', 'type': 'int'},
+   {'allowBlank': False, 'dateFormat': 'Y-m-d', 'name': 'creation_date', 'type': 'date'},
+   {'allowBlank': False, 'name': 'fk_model', 'type': 'string'},
+   {'allowBlank': False, 'name': 'fk_model_id', 'type': 'int'}]
+   
+Also, you could give a mappings dictionary::
+
+  >>> maps = {'name': 'firstname', 'age': 'years_old'}
+  >>> pprint(meta_fields(MetaModel, mappings=maps))
+  [{'allowBlank': True, 'name': 'id', 'type': 'int'},
+   {'allowBlank': False, 'mapping': 'name', 'name': 'firstname', 'type': 'string'},
+   {'allowBlank': True, 'defaultValue': 'nick', 'name': 'nickname', 'type': 'string'},
+   {'allowBlank': False, 'mapping': 'age', 'name': 'years_old', 'type': 'int'},
+   {'allowBlank': False, 'dateFormat': 'Y-m-d', 'name': 'creation_date', 'type': 'date'},
+   {'allowBlank': False, 'name': 'fk_model', 'type': 'string'},
+   {'allowBlank': False, 'name': 'fk_model_id', 'type': 'int'}]
+    
+You may want to exclude some fields from the model::
+
+  >>> fields = ['nickname', 'fk_model']
+  >>> pprint(meta_fields(MetaModel, exclude=fields))
+  [{'allowBlank': True, 'name': 'id', 'type': 'int'},
+  {'allowBlank': False, 'name': 'name', 'type': 'string'},
+  {'allowBlank': False, 'name': 'age', 'type': 'int'},
+  {'allowBlank': False, 'dateFormat': 'Y-m-d', 'name': 'creation_date', 'type': 'date'}]
+  
+You may want to define some custom Field class in your models
+or just customize the way that metadata it's generated. To do this
+you could define a function that return your custom metadata for each field::
+
+  >>> def custom_metadata(field):
+  ...     if field.name == 'age':
+  ...         return {'allowBlank': True,
+  ...                 'name': 'age',
+  ...                 'type': 'int',
+  ...                 'sortType': 'DESC',
+  ...                 'defaultValue' : 0}
+  >>>
+  
+Here we just defined the function to customize the metadata for the `age`
+field::
+  
+  >>> pprint(meta_fields(MetaModel, get_metadata=custom_metadata))
+  [{'allowBlank': True, 'name': 'id', 'type': 'int'},
+   {'allowBlank': False, 'name': 'name', 'type': 'string'},
+   {'allowBlank': True, 'defaultValue': 'nick', 'name': 'nickname', 'type': 'string'},
+   {'allowBlank': True, 'defaultValue': 0, 'name': 'age', 'sortType': 'DESC', 'type': 'int'},   
+   {'allowBlank': False, 'dateFormat': 'Y-m-d', 'name': 'creation_date', 'type': 'date'},
+   {'allowBlank': False, 'name': 'fk_model', 'type': 'string'},
+   {'allowBlank': False, 'name': 'fk_model_id', 'type': 'int'}]
+   
+Let's see what happen with a model that uses a custom Field class::
+  
+  >>> pprint(meta_fields(MetaModelCustomField))
+  Traceback (most recent call last):
+  ...
+  RuntimeError: Field class `HandField` not found in DJANGO_EXT_MAP. Use `get_metadata` to resolve the field `hand`.
+
+extdirect.django doesn't now anything about your custom Field classes, so you MUST
+generate the metadata for those.
+
+  >>> def custom_meta(field):
+  ...     if field.name == 'hand':
+  ...         return {'name': field.name, 'type': 'string'}
+
+  >>> pprint(meta_fields(MetaModelCustomField, get_metadata=custom_meta))
+  [{'allowBlank': True, 'name': 'id', 'type': 'int'},
+   {'name': 'hand', 'type': 'string'}]
