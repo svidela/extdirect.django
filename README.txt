@@ -172,6 +172,37 @@ And let's check the reponse::
    u'tid': 1,
    u'type': u'rpc'}
    
+Call in batch it's also supported. Ext Direct will send different methods calls
+in the same request, `extdirect.django` will handle them and return the results
+in  single response::
+
+  >>> rpc = simplejson.dumps([{'action': 'posts',
+  ...                         'tid': 1,
+  ...                         'method': 'all',
+  ...                         'data':[{'tag': 'extjs'}],
+  ...                         'type':'rpc'},
+  ...                         {'action': 'extdirect_django_doctest',
+  ...                         'tid': 2,
+  ...                         'method': 'module_action',
+  ...                         'data':[],
+  ...                         'type':'rpc'}])
+  
+  >>> response = client.post('/remoting/router/', rpc, 'application/json')
+  
+And we should get the result of each method::
+  
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  [{u'action': u'posts',
+    u'method': u'all',
+    u'result': {u'data': [{u'tag': u'extjs'}], u'success': True},
+    u'tid': 1,
+    u'type': u'rpc'},
+   {u'action': u'extdirect_django_doctest',
+    u'method': u'module_action',
+    u'result': {u'success': True},
+    u'tid': 2,
+    u'type': u'rpc'}]
+
 Let's try with a formHandler, you may want to see the `Ext.Direct Form Integration`_
 for a live example.
 
@@ -253,6 +284,15 @@ Let's see what happen if we turn off the debug mode::
   TypeError: cannot concatenate 'str' and 'int' objects  
   
 The exception raised must be catched in the server and the browser doesn't know anything about it.
+
+Finally, let's try a bad request::
+
+  >>> response = client.post('/remoting/router/')
+
+And let's check the reponse::
+  
+  >>> response.content
+  'Invalid request'
 
 Register the ExtDirect polling provider
 ---------------------------------------

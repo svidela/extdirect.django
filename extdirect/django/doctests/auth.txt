@@ -1,0 +1,147 @@
+Let's test how authentication and permissions works in extdirect.django.
+First, a few imports needed::
+
+  >>> from django.test.client import Client
+  >>> from django.contrib.auth.models import User, Permission
+  >>> from django.utils import simplejson
+  >>> from pprint import pprint
+  
+Ext.direct.RemotingProvider
+---------------------------
+  
+  >>> from extdirect.django import remoting
+  >>> from extdirect.django import tests
+
+We are going to need a Client instance and a some test users::
+  
+  >>> client = Client()  
+  >>> user = User.objects.create_user('john', 'lennon@thebeatles.com', 'johnpassword')  
+  
+Now, we can register a function in our provider that has `login_required=True`::
+
+  >>> @remoting(tests.remote_provider, action='user', login_required=True)
+  ... def auth(request):
+  ...   return "Congratulation, you are logged in"
+  ...
+  >>>
+
+Ok, let's try to call the function defined without credentials::
+    
+  >>> rpc = simplejson.dumps({'action': 'user',
+  ...                         'tid': 1,
+  ...                         'method': 'auth',
+  ...                         'data':[],
+  ...                         'type':'rpc'})
+  >>> response = client.post('/remoting/router/', rpc, 'application/json')
+  
+And let's check the response from extdirect.django::
+  
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  {u'action': u'user',
+   u'method': u'auth',
+   u'result': {u'message': u'You must be authenticated to run this method.',
+               u'success': False},
+   u'tid': 1,
+   u'type': u'rpc'}
+   
+Let's try again but with the user logged in::   
+   
+   >>> client.login(username="john", password="johnpassword")
+   True
+   >>> response = client.post('/remoting/router/', rpc, 'application/json')
+   
+And let's check the response now::
+   
+   >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+   {u'action': u'user',
+    u'method': u'auth',
+    u'result': u'Congratulation, you are logged in',
+    u'tid': 1,
+    u'type': u'rpc'}
+    
+Now, let's try with function that required a given permission::
+
+  >>> @remoting(tests.remote_provider, action='user', permission='django.my_permission')
+  ... def permission(request):
+  ...   return "Congratulation, you have 'django.my_permission' rights"
+  ...
+  >>>
+  
+  >>> rpc = simplejson.dumps({'action': 'user',
+  ...                         'tid': 1,
+  ...                         'method': 'permission',
+  ...                         'data':[],
+  ...                         'type':'rpc'})
+  >>> response = client.post('/remoting/router/', rpc, 'application/json')
+  
+Let's check the response::
+  
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  {u'action': u'user',
+   u'method': u'permission',
+   u'result': {u'messsage': u'You need `django.my_permission` permission to run this method',
+               u'success': False},
+   u'tid': 1,
+   u'type': u'rpc'}
+   
+Now, we grant this permission to the user and try again::
+   
+  >>> perm = Permission.objects.get(codename='my_permission')
+  >>> user.user_permissions = [perm]  
+  >>> user.has_perm('django.my_permission')
+  True
+  
+  >>> response = client.post('/remoting/router/', rpc, 'application/json')
+  
+Let's check the response::
+  
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE  
+  {u'action': u'user',
+   u'method': u'permission',
+   u'result': u"Congratulation, you have 'django.my_permission' rights",
+   u'tid': 1,
+   u'type': u'rpc'}
+   
+  >>> client.logout()
+  
+Ext.direct.PollingProvider
+--------------------------
+
+  >>> from extdirect.django import polling
+  >>> @polling(tests.polling_provider, login_required=True)
+  ... def my_polling(request):
+  ...   return "I'm tired...and you are logged in"
+
+  >>> response = client.get('/polling/router/') 
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  {u'data': u'You must be authenticated to run this method.',
+   u'name': u'some-event',
+   u'type': u'event'}
+   
+  >>> client.login(username="john", password="johnpassword")
+  True
+  
+  >>> response = client.get('/polling/router/') 
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  {u'data': u"I'm tired...and you are logged in",
+   u'name': u'some-event',
+   u'type': u'event'}
+   
+  >>> @polling(tests.polling_provider, permission='django.my_permission')
+  ... def my_polling(request):
+  ...   return "I'm tired... and you have 'django.my_permission' rights"
+  
+  >>> user.user_permissions.clear()
+  
+  >>> response = client.get('/polling/router/') 
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE  
+  {u'data': u'You need `django.my_permission` permission to run this method',
+   u'name': u'some-event',
+   u'type': u'result'}
+
+  >>> user.user_permissions = [perm]
+  >>> response = client.get('/polling/router/') 
+  >>> pprint(simplejson.loads(response.content)) #doctest: +NORMALIZE_WHITESPACE
+  {u'data': u"I'm tired... and you have 'django.my_permission' rights",
+   u'name': u'some-event',
+   u'type': u'event'}

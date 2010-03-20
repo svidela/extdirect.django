@@ -43,3 +43,10 @@ class HandField(models.Field):
 class MetaModelCustomField(models.Model):
     
     hand = HandField()
+    
+#Auth tests
+class PermModel(models.Model):
+    class Meta:
+        permissions = (
+            ("my_permission", "My Permission"),
+        )
