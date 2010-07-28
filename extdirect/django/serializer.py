@@ -46,9 +46,18 @@ class Serializer(python.Serializer):
                 self._current[field.name] = self._current[field.name+'_id'] = smart_unicode(getattr(related, field.rel.field_name), strings_only=True)        
 
     def handle_m2m_field(self, obj, field):
-        if field.creates_table:            
-            self._current[field.name+'_ids'] = [smart_unicode(related._get_pk_val(), strings_only=True)
-                                                for related in getattr(obj, field.name).iterator()]
+        if field.rel.through._meta.auto_created:
+            if self.use_natural_keys and hasattr(field.rel.to, 'natural_key'):
+                m2m_value = lambda value: value.natural_key()
+            else:
+                m2m_value = lambda value: smart_unicode(value._get_pk_val(), strings_only=True)
+            self._current[field.name+'_ids'] = [m2m_value(related)
+                               for related in getattr(obj, field.name).iterator()]
+    
+        # Seems that recent version of Django, lost the creates_table attribute.                               
+        #if field.creates_table:            
+        #    self._current[field.name+'_ids'] = [smart_unicode(related._get_pk_val(), strings_only=True)
+        #                                        for related in getattr(obj, field.name).iterator()]
     
     def serialize(self, queryset, **options):
         """
@@ -58,7 +67,7 @@ class Serializer(python.Serializer):
 
         self.stream = options.get("stream", StringIO())
         self.selected_fields = options.get("fields")
-        
+        self.use_natural_keys = options.get("use_natural_keys", False)
         self.local_fields = options.get("local")
         
         self.exclude_fields = options.get("exclude_fields")
