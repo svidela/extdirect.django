@@ -42,7 +42,8 @@ could overrides the defaults::
   
   >>> from pprint import pprint
   >>> pprint(tests.remote_provider._config) #doctest: +NORMALIZE_WHITESPACE
-  {'actions': {'ModelCRUD': [{'formHandler': True, 'len': 1, 'name': 'edit'},
+  {'actions': {'ModelCRUD': [{'formHandler': False, 'len': 1, 'name': 'load'},
+                            {'formHandler': True, 'len': 1, 'name': 'edit'},
                             {'formHandler': True, 'len': 1, 'name': 'create'},
                             {'formHandler': False, 'len': 1, 'name': 'list'},
                             {'formHandler': False, 'len': 1, 'name': 'delete'}]},

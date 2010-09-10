@@ -1,11 +1,9 @@
 from extdirect.django.store import ExtDirectStore
-from django.forms.models import modelform_factory
+
 from django.db import transaction
 from django.core.serializers import serialize
-from django.shortcuts import get_object_or_404, render_to_response
 from django.utils.encoding import force_unicode
-
-from django.utils import simplejson
+from django.views.generic.create_update import get_model_and_form_class
 
 def format_form_errors(errors):
     """
@@ -29,43 +27,56 @@ class BaseExtDirectCRUD(object):
     model = None
     form = None
     
-    show_form_validation = False
+    #Defaults
+    isForm = False
+    parse_fk_fields = True
+    show_form_validation = False 
+    metadata = True   
     
+    #Messages
     create_success_msg = "Records created"
     create_failure_msg = "There was an error while trying to save some of the records"
     
     update_success_msg = "Records updated"
     update_failure_msg = "There was an error while trying to save some of the records"
     
-    destroy_success_msg = "Objects deleted"    
+    destroy_success_msg = "Objects deleted"
     
-    def __init__(self, provider, action, login_required, permission):
+    #Seems that Ext.form.action.DirectLoad always look for this metadata.
+    #If you find a way to change that on the client-side, please let me know.
+    direct_load_metadata = {'root': 'data', 'total' : 'total', 'success': 'success'}
+    
+    def __init__(self, provider, action, login_required, permission):                
         self.store = self.direct_store()
         
-        if not self.form:
-            self.form = modelform_factory(self.model)
+        #same as Django generic views
+        self.model, self.form = get_model_and_form_class(self.model, self.form)
         
         #Register the CRUD actions. You may want to re-implement these methods
         #in your class definition in order to change the defaults registrations.
         self.reg_create(provider, action, login_required, permission)
         self.reg_read(provider, action, login_required, permission)
+        self.reg_load(provider, action, login_required, permission)
         self.reg_update(provider, action, login_required, permission)
         self.reg_destroy(provider, action, login_required, permission)
             
     def reg_create(self, provider, action, login_required, permission):
-        provider.register(self.create, action, 'create', 1, False, login_required, permission)
+        provider.register(self.create, action, 'create', 1, self.isForm, login_required, permission)
         
     def reg_read(self, provider, action, login_required, permission):        
         provider.register(self.read, action, 'read', 1, False, login_required, permission)
         
+    def reg_load(self, provider, action, login_required, permission):        
+        provider.register(self.load, action, 'load', 1, False, login_required, permission)        
+        
     def reg_update(self, provider, action, login_required, permission):
-        provider.register(self.update, action, 'update', 1, False, login_required, permission)
+        provider.register(self.update, action, 'update', 1, self.isForm, login_required, permission)
 
     def reg_destroy(self, provider, action, login_required, permission):
         provider.register(self.destroy, action, 'destroy', 1, False, login_required, permission)
     
     def direct_store(self):
-        return ExtDirectStore(self.model, metadata=True)
+        return ExtDirectStore(self.model, metadata=self.metadata)
         
     def query(self, **kw):
         #It must return `None` or a valid Django Queryset
@@ -75,65 +86,57 @@ class BaseExtDirectCRUD(object):
     def extract_create_data(self, request, sid):
         #It must return a dict object or a list of dicts with the values ready
         #to create the new instance or instances.
-        return request.extdirect_post_data[0][self.store.root]
+        if self.isForm:
+            return dict(request.extdirect_post_data.items())
+        else:
+            return request.extdirect_post_data[0][self.store.root]
     
     def extract_read_data(self, request):
         #It must return a dict object ready to be passed
         #to the query method of ExtDirectStore class.
         return request.extdirect_post_data[0]
+        
+    def extract_load_data(self, request):
+        #It must return a dict object ready to be passed
+        #to the query method of ExtDirectStore class.
+        return request.extdirect_post_data[0]        
     
     def extract_update_data(self, request, sid):
         #It must return a dict object or a list of dicts with the values ready
-        #to update the instance or instances.        
-        return request.extdirect_post_data[0][self.store.root]
+        #to update the instance or instances.
+        if self.isForm:
+            return dict(request.extdirect_post_data.items())        
+        else:
+            return request.extdirect_post_data[0][self.store.root]
     
     def extract_destroy_data(self, request):
         #It must return the id or list of id's to be deleted.
         return request.extdirect_post_data[0][self.store.root]
     
-    def pre_create(self, data):
-        return True, ""
-        
-    def post_create(self, ids):
-        pass
-    
-    def post_single_create(self, obj):
-        pass
-
-    def _single_create(self, data):
+    def _single_create(self, data, files=None):
         #id='ext-record-#'
         data.pop("id", "")
     
-        c = None        
-        form = self.form(data=self._single_process(data))
+        c = None
+        if self.parse_fk_fields:
+            data = self._fk_fields_parser(data)
+                     
+        form = self.form(data, files)
         if form.is_valid():
             c = form.save()                
             self.post_single_create(c)
             return c.id, ""
         else:
             return 0, form.errors            
-        
-    def pre_read(self, data):
-        return True, ""
-
-    def pre_update(self, data):
-        return True, ""
-        
-    def post_update(self, ids):
-        pass
-    
-    def post_single_update(self, obj):
-        pass
-    
-    def _single_update(self, data):
-        data = dict(data.items())        
+           
+    def _single_update(self, data, files=None):
         id = data.pop("id")        
         obj = self.model.objects.get(pk=id)        
-    
-        all_fields = serialize('python', [obj])[0]['fields']        
-        all_fields.update(self._single_process(data))
-
-        form = self.form(all_fields, instance=obj)
+        
+        if self.parse_fk_fields:
+            data = self._fk_fields_parser(data)
+                            
+        form = self.form(data, files, instance=obj)
         if form.is_valid():
             obj = form.save()        
             self.post_single_update(obj)
@@ -143,12 +146,39 @@ class BaseExtDirectCRUD(object):
         
     # Process of data in order to fix the foreign keys according to how
     # the `extdirect` serializer handles them.
-    # {'fk_model': 'FKModel', 'fk_model_id':1} --> {'fk_model':1, 'fk_model_id': 1}
-    def _single_process(self, data):
+    # {'fk_model': 'FKModel','fk_model_id':1} --> {'fk_model':1, 'fk_model_id': 1}
+    def _fk_fields_parser(self, data):
         for field in data.keys():
-            if field[-3:] == '_id' and isinstance(data[field], int) and not isinstance(data[field[:-3]], int):
+            if field[-3:] == '_id': #and isinstance(data[field], int) and not isinstance(data[field[:-3]], int):
                 data[field[:-3]] = data[field]
+                data.pop(field)
         return data        
+
+    #Very simple hooks that you may want to use
+    #to do something.
+    def pre_create(self, data):
+        return True, ""
+        
+    def post_create(self, ids):
+        pass
+    
+    def post_single_create(self, obj):
+        pass
+
+    def pre_read(self, data):
+        return True, ""
+        
+    def pre_load(self, data):
+        return True, ""        
+
+    def pre_update(self, data):
+        return True, ""
+        
+    def post_update(self, ids):
+        pass
+    
+    def post_single_update(self, obj):
+        pass
 
     def pre_destroy(self, data):
         return True, ""
@@ -185,14 +215,14 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
         errors = {}
         if isinstance(extdirect_data, list):
             for data in extdirect_data:
-                id, errors = self._single_create(data)
+                id, errors = self._single_create(data, request.FILES)
                 if id:
                     ids.append(id)
                 else:            
                     success = False
                     break
         else:
-            id, errors = self._single_create(extdirect_data)            
+            id, errors = self._single_create(extdirect_data, request.FILES)            
             if id:
                 ids.append(id)
             else:
@@ -221,6 +251,24 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
             return self.store.query(qs=self.query(**extdirect_data), **extdirect_data)
         else:
             return self.failure(msg)
+            
+    #LOAD            
+    def load(self, request):
+        #Almost the same as 'read' action but here we call
+        #the serializer directly with a fixed metadata (different
+        #from the self.store). Besides, we assume that the load
+        #action should return a single record, so all the query
+        #options are not needed.
+        meta = self.direct_load_metadata
+        extdirect_data = self.extract_load_data(request)
+        ok, msg = self.pre_load(extdirect_data)         
+        if ok:                  
+            queryset = self.model.objects.filter(**extdirect_data)
+            res = serialize('extdirect', queryset, meta=meta, single_cast=True)
+            return res
+        else:
+            return self.failure(msg)                        
+
     
     #UPDATE    
     @transaction.commit_manually
@@ -240,7 +288,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
         if isinstance(records, list):
             #batch update
             for data in records:
-                id, errors = self._single_update(data)
+                id, errors = self._single_update(data, request.FILES)
                 if id:
                     ids.append(id)
                 else:
@@ -249,7 +297,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
 
         else:
             #single update
-            id, errors = self._single_update(records)
+            id, errors = self._single_update(records, request.FILES)
             if id:
                 ids.append(id)
             else:
@@ -271,7 +319,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
             return self.failure(err)
     
     #DESTROY        
-    def destroy(self, request):
+    def destroy(self, request):        
         ids = self.extract_destroy_data(request)
         
         ok, msg = self.pre_destroy(ids)
@@ -285,7 +333,8 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
         
         for c in cs:
             i = c.id
-            c.delete()        
+            c.delete()
+                
             self.post_destroy(i)
         
         return {self.store.success: True,

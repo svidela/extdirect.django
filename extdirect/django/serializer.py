@@ -14,8 +14,9 @@ class Serializer(python.Serializer):
             self.meta['success']: True
         }
 
-    def end_serialization(self):
-        pass
+    def end_serialization(self, total, single_cast):
+        if total == 1 and single_cast:
+            self.objects[self.meta['root']] = self.objects[self.meta['root']][0]
 
     def start_object(self, obj):
         self._current = {}
@@ -70,12 +71,14 @@ class Serializer(python.Serializer):
         self.use_natural_keys = options.get("use_natural_keys", False)
         self.local_fields = options.get("local")
         
-        self.exclude_fields = options.get("exclude_fields")
+        self.exclude_fields = options.get("exclude_fields", [])
         
         self.meta = options.get('meta', dict(root='records', total='total', success='success'))
         self.extras = options.get('extras', [])
         
-        total = options.get("total", queryset.count())        
+        single_cast = options.get('single_cast', False)     
+        total = options.get("total", queryset.count())   
+
         self.start_serialization(total)
                         
         for obj in queryset:
@@ -99,6 +102,6 @@ class Serializer(python.Serializer):
                     if self.selected_fields is None or field.attname in self.selected_fields:
                         self.handle_m2m_field(obj, field)
             self.end_object(obj)
-        self.end_serialization()
+        self.end_serialization(total, single_cast)
         return self.getvalue()    
 
