@@ -365,7 +365,7 @@ Let's see the simplest use case::
   >>> from extdirect.django.models import ExtDirectStoreModel
   >>> list = ExtDirectStore(ExtDirectStoreModel)
   >>> pprint(list.query()) #doctest: +NORMALIZE_WHITESPACE
-  {'records': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}], 'success': True, 'total': 2}
+  {'records': [{'id': 1, 'name': u'Homer'}, {'id': 2, 'name': u'Joe'}], 'success': True, 'total': 2} 
   
 So a quick and almost complete example could be:
 

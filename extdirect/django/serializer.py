@@ -23,7 +23,7 @@ class Serializer(python.Serializer):
         
     def end_object(self, obj):
         rec = self._current
-        rec['id'] = smart_unicode(obj._get_pk_val(), strings_only=True)
+        rec[self.meta['idProperty']] = smart_unicode(obj._get_pk_val(), strings_only=True)
         
         for extra in self.extras:
                 rec[extra[0]] = extra[1](obj)
@@ -54,12 +54,7 @@ class Serializer(python.Serializer):
                 m2m_value = lambda value: smart_unicode(value._get_pk_val(), strings_only=True)
             self._current[field.name+'_ids'] = [m2m_value(related)
                                for related in getattr(obj, field.name).iterator()]
-    
-        # Seems that recent version of Django, lost the creates_table attribute.                               
-        #if field.creates_table:            
-        #    self._current[field.name+'_ids'] = [smart_unicode(related._get_pk_val(), strings_only=True)
-        #                                        for related in getattr(obj, field.name).iterator()]
-    
+                
     def serialize(self, queryset, **options):
         """
         Serialize a queryset.
@@ -73,7 +68,7 @@ class Serializer(python.Serializer):
         
         self.exclude_fields = options.get("exclude_fields", [])
         
-        self.meta = options.get('meta', dict(root='records', total='total', success='success'))
+        self.meta = options.get('meta', dict(root='records', total='total', success='success', idProperty='id'))
         self.extras = options.get('extras', [])
         
         single_cast = options.get('single_cast', False)     

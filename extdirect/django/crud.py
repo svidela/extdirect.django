@@ -28,6 +28,7 @@ class BaseExtDirectCRUD(object):
     form = None
     
     #Defaults
+    actions = ('create', 'read', 'update', 'destroy', 'load')
     isForm = False
     parse_fk_fields = True
     show_form_validation = False 
@@ -46,19 +47,29 @@ class BaseExtDirectCRUD(object):
     #If you find a way to change that on the client-side, please let me know.
     direct_load_metadata = {'root': 'data', 'total' : 'total', 'success': 'success'}
     
-    def __init__(self, provider, action, login_required, permission):                
-        self.store = self.direct_store()
-        
+    def __init__(self):                        
         #same as Django generic views
         self.model, self.form = get_model_and_form_class(self.model, self.form)
+
+        self.store = self.direct_store()
         
+    def register_actions(self, provider, action, login_required, permission):
         #Register the CRUD actions. You may want to re-implement these methods
         #in your class definition in order to change the defaults registrations.
-        self.reg_create(provider, action, login_required, permission)
-        self.reg_read(provider, action, login_required, permission)
-        self.reg_load(provider, action, login_required, permission)
-        self.reg_update(provider, action, login_required, permission)
-        self.reg_destroy(provider, action, login_required, permission)
+        if 'create' in self.actions:
+            self.reg_create(provider, action, login_required, permission)
+        
+        if 'read' in self.actions:
+            self.reg_read(provider, action, login_required, permission)
+            
+        if 'load' in self.actions:
+            self.reg_load(provider, action, login_required, permission)
+            
+        if 'update' in self.actions:
+            self.reg_update(provider, action, login_required, permission)
+            
+        if 'destroy' in self.actions:
+            self.reg_destroy(provider, action, login_required, permission)
             
     def reg_create(self, provider, action, login_required, permission):
         provider.register(self.create, action, 'create', 1, self.isForm, login_required, permission)
@@ -113,7 +124,7 @@ class BaseExtDirectCRUD(object):
         #It must return the id or list of id's to be deleted.
         return request.extdirect_post_data[0][self.store.root]
     
-    def _single_create(self, data, files=None):
+    def _single_create(self, request, data):
         #id='ext-record-#'
         data.pop("id", "")
     
@@ -121,25 +132,25 @@ class BaseExtDirectCRUD(object):
         if self.parse_fk_fields:
             data = self._fk_fields_parser(data)
                      
-        form = self.form(data, files)
+        form = self.form(data, request.FILES)
         if form.is_valid():
             c = form.save()                
-            self.post_single_create(c)
+            self.post_single_create(request, c)
             return c.id, ""
         else:
             return 0, form.errors            
            
-    def _single_update(self, data, files=None):
+    def _single_update(self, request, data):
         id = data.pop("id")        
         obj = self.model.objects.get(pk=id)        
         
         if self.parse_fk_fields:
             data = self._fk_fields_parser(data)
                             
-        form = self.form(data, files, instance=obj)
+        form = self.form(data, request.FILES, instance=obj)
         if form.is_valid():
             obj = form.save()        
-            self.post_single_update(obj)
+            self.post_single_update(request, obj)
             return obj.id, ""
         else:
             return 0, form.errors
@@ -162,7 +173,7 @@ class BaseExtDirectCRUD(object):
     def post_create(self, ids):
         pass
     
-    def post_single_create(self, obj):
+    def post_single_create(self, request, obj):
         pass
 
     def pre_read(self, data):
@@ -171,13 +182,13 @@ class BaseExtDirectCRUD(object):
     def pre_load(self, data):
         return True, ""        
 
-    def pre_update(self, data):
+    def pre_update(self, request, data):
         return True, ""
         
     def post_update(self, ids):
         pass
     
-    def post_single_update(self, obj):
+    def post_single_update(self, request, obj):
         pass
 
     def pre_destroy(self, data):
@@ -203,7 +214,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
     @transaction.commit_manually
     def create(self, request):
         sid = transaction.savepoint()
-        
+
         extdirect_data = self.extract_create_data(request, sid)        
         
         ok, msg = self.pre_create(extdirect_data)
@@ -215,14 +226,14 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
         errors = {}
         if isinstance(extdirect_data, list):
             for data in extdirect_data:
-                id, errors = self._single_create(data, request.FILES)
+                id, errors = self._single_create(request, data)
                 if id:
                     ids.append(id)
                 else:            
                     success = False
                     break
         else:
-            id, errors = self._single_create(extdirect_data, request.FILES)            
+            id, errors = self._single_create(request, extdirect_data)            
             if id:
                 ids.append(id)
             else:
@@ -276,8 +287,8 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
         sid = transaction.savepoint()        
 
         extdirect_data = self.extract_update_data(request, sid)
-        
-        ok, msg = self.pre_update(extdirect_data)
+
+        ok, msg = self.pre_update(request, extdirect_data)
         if not ok:
             return self.failure(msg)
         
@@ -288,7 +299,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
         if isinstance(records, list):
             #batch update
             for data in records:
-                id, errors = self._single_update(data, request.FILES)
+                id, errors = self._single_update(request, data)
                 if id:
                     ids.append(id)
                 else:
@@ -297,7 +308,7 @@ class ExtDirectCRUD(BaseExtDirectCRUD):
 
         else:
             #single update
-            id, errors = self._single_update(records, request.FILES)
+            id, errors = self._single_update(request, records)
             if id:
                 ids.append(id)
             else:

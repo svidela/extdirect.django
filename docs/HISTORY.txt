@@ -4,6 +4,7 @@ CHANGES
 0.4 (unreleased)
 ================
 
+* Bugfix: missing custom idProperty in the `extdirect` serializer
 * Bugfix: Wrong page number when using paging
 * Bugfix: Wrong dateFormat in generated metadata
 * `extdirect` serializer has changed how it handles foreign keys

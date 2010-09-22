@@ -96,7 +96,8 @@ class ExtDirectStore(object):
         meta = {
             'root': self.root,
             'total' : self.total,
-            'success': self.success
+            'success': self.success,
+            'idProperty': self.id_property
         }        
         res = serialize('extdirect', queryset, meta=meta, extras=self.extras,
                         total=total, exclude_fields=self.exclude_fields)
